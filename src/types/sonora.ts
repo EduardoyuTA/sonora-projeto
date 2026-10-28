@@ -79,6 +79,14 @@ export interface AppSettings {
   rememberLastConfig: boolean
   processingMode: ProcessingMode
   reducedMotion: boolean
+  customApiUrl?: string
+}
+
+export interface NativeEngineHealth {
+  status: 'checking' | 'online' | 'waking' | 'offline'
+  latencyMs?: number
+  endpoint: string
+  engineName?: string
 }
 
 export type ActiveTab = 'converter' | 'historico' | 'configuracoes'
@@ -95,4 +103,3 @@ export type MascotMood =
   | 'grooving'
   | 'error'
   | 'petted'
-

@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rememberLastConfig: true,
   processingMode: 'hybrid-auto',
   reducedMotion: false,
+  customApiUrl: '',
 }
 
 export function loadSettings(): AppSettings {

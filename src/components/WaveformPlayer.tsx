@@ -37,19 +37,13 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
-  const [resolvedDuration, setResolvedDuration] = useState(duration || 0)
+  const [loadedDuration, setLoadedDuration] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
   const [playbackRate, setPlaybackRate] = useState<number>(1)
 
+  const resolvedDuration = loadedDuration > 0 ? loadedDuration : duration || 0
   const rates = [0.75, 1, 1.25, 1.5, 2]
-
-  useEffect(() => {
-    setIsPlaying(false)
-    setCurrentTime(0)
-    setResolvedDuration(duration || 0)
-    onPlayStateChange?.(false)
-  }, [audioUrl, duration, onPlayStateChange])
 
   useEffect(() => {
     onPlayStateChange?.(isPlaying)
@@ -164,11 +158,16 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         ref={audioRef}
         src={audioUrl}
         preload="metadata"
+        onLoadStart={() => {
+          setIsPlaying(false)
+          setCurrentTime(0)
+          setLoadedDuration(0)
+        }}
         onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => {
           const dur = e.currentTarget.duration
           if (Number.isFinite(dur) && dur > 0) {
-            setResolvedDuration(dur)
+            setLoadedDuration(dur)
           }
         }}
         onEnded={() => setIsPlaying(false)}

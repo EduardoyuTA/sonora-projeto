@@ -13,6 +13,34 @@ if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true })
 }
 
+function safeUnlink(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+  } catch {}
+}
+
+// Limpeza periódica de arquivos órfãos (mais de 15 minutos) para proteger o disco efêmero do Render
+function sweepStaleTempFiles() {
+  try {
+    const now = Date.now()
+    const maxAgeMs = 15 * 60 * 1000
+    const entries = fs.readdirSync(tempDir)
+    for (const entry of entries) {
+      const fullPath = path.join(tempDir, entry)
+      try {
+        const stat = fs.statSync(fullPath)
+        if (now - stat.mtimeMs > maxAgeMs) {
+          fs.unlinkSync(fullPath)
+        }
+      } catch {}
+    }
+  } catch {}
+}
+
+setInterval(sweepStaleTempFiles, 5 * 60 * 1000).unref()
+
 function setCorsHeaders(req, res) {
   const requestOrigin = req.headers.origin
   if (ALLOWED_ORIGIN === '*') {
@@ -27,7 +55,7 @@ function setCorsHeaders(req, res) {
     }
   }
 
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS')
   res.setHeader(
     'Access-Control-Allow-Headers',
     [
@@ -46,14 +74,7 @@ function setCorsHeaders(req, res) {
     'Access-Control-Expose-Headers',
     'X-Sonora-Engine, Content-Length, Content-Type'
   )
-}
-
-function safeUnlink(filePath) {
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath)
-    }
-  } catch {}
+  res.setHeader('Access-Control-Max-Age', '86400')
 }
 
 const server = http.createServer((req, res) => {
@@ -67,9 +88,17 @@ const server = http.createServer((req, res) => {
 
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`)
 
-  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/api/health')) {
+  if (
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    (url.pathname === '/' || url.pathname === '/api/health')
+  ) {
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Cache-Control', 'no-store')
+    if (req.method === 'HEAD') {
+      res.end()
+      return
+    }
     res.end(
       JSON.stringify({
         status: 'ok',
@@ -117,6 +146,17 @@ const server = http.createServer((req, res) => {
       writeStream.destroy()
       safeUnlink(inputPath)
       safeUnlink(outputPath)
+    })
+
+    writeStream.on('error', () => {
+      aborted = true
+      safeUnlink(inputPath)
+      safeUnlink(outputPath)
+      if (!res.headersSent) {
+        res.statusCode = 500
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ error: 'Falha ao receber o arquivo temporário.' }))
+      }
     })
 
     req.pipe(writeStream)
@@ -187,18 +227,20 @@ const server = http.createServer((req, res) => {
 
         if (code !== 0 || !fs.existsSync(outputPath)) {
           safeUnlink(outputPath)
-          res.statusCode = 422
-          res.setHeader('Content-Type', 'application/json')
-          const noAudio =
-            stderrLog.includes('Output file does not contain any stream') ||
-            stderrLog.includes('matches no streams')
-          res.end(
-            JSON.stringify({
-              error: noAudio
-                ? 'Este vídeo não possui uma faixa de áudio válida para extração.'
-                : 'Não foi possível processar este arquivo de vídeo. Verifique se o arquivo está íntegro.',
-            })
-          )
+          if (!res.headersSent) {
+            res.statusCode = 422
+            res.setHeader('Content-Type', 'application/json')
+            const noAudio =
+              stderrLog.includes('Output file does not contain any stream') ||
+              stderrLog.includes('matches no streams')
+            res.end(
+              JSON.stringify({
+                error: noAudio
+                  ? 'Este vídeo não possui uma faixa de áudio válida para extração.'
+                  : 'Não foi possível processar este arquivo de vídeo. Verifique se o arquivo está íntegro.',
+              })
+            )
+          }
           return
         }
 
@@ -220,14 +262,20 @@ const server = http.createServer((req, res) => {
         readStream.on('close', () => {
           safeUnlink(outputPath)
         })
+        readStream.on('error', () => {
+          safeUnlink(outputPath)
+          res.end()
+        })
       })
 
       ff.on('error', () => {
         safeUnlink(inputPath)
         safeUnlink(outputPath)
-        res.statusCode = 500
-        res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ error: 'Motor FFmpeg indisponível no servidor.' }))
+        if (!res.headersSent) {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: 'Motor FFmpeg indisponível no servidor.' }))
+        }
       })
     })
 

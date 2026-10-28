@@ -51,12 +51,15 @@ export function formatPreciseTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '00:00.0'
   const mins = Math.floor(seconds / 60)
   const secs = (seconds % 60).toFixed(1)
-  return `${String(mins).padStart(2, '0')}:${ Number(secs) < 10 ? '0' + secs : secs }`
+  return `${String(mins).padStart(2, '0')}:${Number(secs) < 10 ? '0' + secs : secs}`
 }
 
 export function sanitizeFileName(name: string): string {
-  const cleaned = name
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+  const withoutControls = Array.from(name)
+    .filter((ch) => ch.charCodeAt(0) >= 32)
+    .join('')
+  const cleaned = withoutControls
+    .replace(/[<>:"/\\|?*]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
   return cleaned || 'audio-sonora'

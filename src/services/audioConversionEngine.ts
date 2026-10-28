@@ -2,6 +2,7 @@ import { Mp3Encoder } from '@breezystack/lamejs'
 import type {
   ConversionConfig,
   ConvertedAudioResult,
+  NativeEngineHealth,
   ProcessingMode,
   VideoMetadata,
 } from '../types/sonora'
@@ -14,6 +15,7 @@ import {
   sanitizeFileName,
   stripExtension,
 } from '../utils/formatters'
+import { loadSettings } from './storageService'
 
 export interface ConversionProgressUpdate {
   percent: number
@@ -352,22 +354,107 @@ function processAudioBuffer(
   return targetBuffer
 }
 
-const API_BASE_URL = (
+const ENV_API_BASE_URL = (
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || ''
-).replace(/\/+$/, '')
+)
+  .trim()
+  .replace(/\/+$/, '')
+
+/**
+ * Resolves the active FFmpeg backend URL:
+ * 1. Custom URL configured by user in Settings (localStorage)
+ * 2. Build-time VITE_API_BASE_URL environment variable (Vercel)
+ * 3. Relative origin ('') for local Vite dev server or same-origin proxy
+ */
+export function resolveApiBaseUrl(overrideUrl?: string): string {
+  const candidate =
+    overrideUrl !== undefined
+      ? overrideUrl.trim()
+      : (loadSettings().customApiUrl || '').trim()
+  if (candidate) {
+    return candidate.replace(/\/+$/, '')
+  }
+  return ENV_API_BASE_URL
+}
+
+let lastKnownHealth: NativeEngineHealth = {
+  status: 'checking',
+  endpoint: ENV_API_BASE_URL || 'local',
+}
+
+export function getLastKnownEngineHealth(): NativeEngineHealth {
+  return lastKnownHealth
+}
+
+/**
+ * Checks whether the native FFmpeg API (Render or local Vite middleware) is online
+ * and returning valid JSON (protecting against static SPA HTML rewrites).
+ */
+export async function checkNativeEngineHealth(
+  overrideUrl?: string,
+  timeoutMs = 8000
+): Promise<NativeEngineHealth> {
+  const baseUrl = resolveApiBaseUrl(overrideUrl)
+  const endpointLabel = baseUrl || 'Servidor Local (/api)'
+  const start = performance.now()
+
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const res = await fetch(`${baseUrl}/api/health`, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+
+    window.clearTimeout(timer)
+    const contentType = res.headers.get('content-type') || ''
+
+    if (!res.ok || !contentType.includes('application/json')) {
+      lastKnownHealth = {
+        status: 'offline',
+        endpoint: endpointLabel,
+      }
+      return lastKnownHealth
+    }
+
+    const data = (await res.json()) as { status?: string; engine?: string }
+    if (data && data.status === 'ok') {
+      const latencyMs = Math.max(1, Math.round(performance.now() - start))
+      lastKnownHealth = {
+        status: 'online',
+        latencyMs,
+        endpoint: endpointLabel,
+        engineName: data.engine || 'FFmpeg Native',
+      }
+      return lastKnownHealth
+    }
+
+    lastKnownHealth = {
+      status: 'offline',
+      endpoint: endpointLabel,
+    }
+    return lastKnownHealth
+  } catch {
+    window.clearTimeout(timer)
+    lastKnownHealth = {
+      status: 'offline',
+      endpoint: endpointLabel,
+    }
+    return lastKnownHealth
+  }
+}
 
 /**
  * Sends a silent background health-check ping to wake up the Render FFmpeg instance
  * as soon as the user opens the Vercel frontend.
  */
 export function warmupNativeEngine(): void {
-  fetch(`${API_BASE_URL}/api/health`, {
-    method: 'GET',
-    mode: 'cors',
-    cache: 'no-store',
-  }).catch(() => {
-    // Ignore errors silently; convertVideoToAudio will fall back to Web Audio if unreachable
-  })
+  const baseUrl = resolveApiBaseUrl()
+  // Use a longer timeout (25s) on initial warmup in case Render free tier is in cold start
+  checkNativeEngineHealth(baseUrl, 25000).catch(() => {})
 }
 
 /**
@@ -379,9 +466,33 @@ async function convertViaNativeFfmpeg(
   signal: AbortSignal,
   onProgress: (update: ConversionProgressUpdate) => void
 ): Promise<Blob> {
+  const baseUrl = resolveApiBaseUrl()
+  const isLocalHost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1')
+
+  // If deployed on Vercel without a configured Render URL and health check is offline,
+  // skip uploading the entire video to the static host and fall back immediately.
+  if (!baseUrl && !isLocalHost && lastKnownHealth.status === 'offline') {
+    throw new Error('NETWORK_OR_ENGINE_UNAVAILABLE')
+  }
+
+  // If a remote Render URL is configured and hasn't responded yet, ping it before uploading
+  if (baseUrl && lastKnownHealth.status !== 'online') {
+    onProgress({
+      percent: 6,
+      stage: 'Conectando ao servidor FFmpeg...',
+    })
+    const health = await checkNativeEngineHealth(baseUrl, 15000)
+    if (health.status !== 'online') {
+      throw new Error('NETWORK_OR_ENGINE_UNAVAILABLE')
+    }
+  }
+
   return new Promise<Blob>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${API_BASE_URL}/api/convert`, true)
+    xhr.open('POST', `${baseUrl}/api/convert`, true)
     xhr.responseType = 'blob'
 
     xhr.setRequestHeader('x-sonora-format', config.format)

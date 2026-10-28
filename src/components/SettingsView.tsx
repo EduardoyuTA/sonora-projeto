@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
+  Activity,
   CheckCircle2,
   Cpu,
   Globe,
   HelpCircle,
   Moon,
+  RefreshCw,
+  Server,
   Shield,
   Sliders,
   Sun,
@@ -14,8 +17,13 @@ import type {
   AppSettings,
   AudioFormat,
   BitrateKbps,
+  NativeEngineHealth,
   QualityTier,
 } from '../types/sonora'
+import {
+  checkNativeEngineHealth,
+  getLastKnownEngineHealth,
+} from '../services/audioConversionEngine'
 import { MAX_FILE_SIZE_LABEL, mapTierToBitrate } from '../utils/formatters'
 
 interface SettingsViewProps {
@@ -33,6 +41,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const isDark = settings.theme === 'dark'
   const [clearedBanner, setClearedBanner] = useState(false)
+  const [apiUrlInput, setApiUrlInput] = useState(settings.customApiUrl || '')
+  const [engineHealth, setEngineHealth] = useState<NativeEngineHealth>(() =>
+    getLastKnownEngineHealth()
+  )
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    checkNativeEngineHealth(settings.customApiUrl, 8000).then((res) => {
+      if (active) setEngineHealth(res)
+    })
+    return () => {
+      active = false
+    }
+  }, [settings.customApiUrl])
+
+  const handleTestAndSaveApiUrl = async () => {
+    const cleanUrl = apiUrlInput.trim().replace(/\/+$/, '')
+    setApiUrlInput(cleanUrl)
+    onUpdateSettings({
+      ...settings,
+      customApiUrl: cleanUrl,
+    })
+    setIsTestingConnection(true)
+    const health = await checkNativeEngineHealth(cleanUrl, 12000)
+    setEngineHealth(health)
+    setIsTestingConnection(false)
+  }
 
   const handleFormatChange = (fmt: AudioFormat) => {
     onUpdateSettings({
@@ -197,7 +233,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </label>
       </section>
 
-      {/* 2. Preferências Padrão de Conversão */}
+      {/* 2. Preferências Padrão de Conversão e Conexão Render */}
       <section
         className={`rounded-3xl border p-6 sm:p-7 ${
           isDark
@@ -311,7 +347,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Híbrido Nativo FFmpeg + Web Audio (Recomendado)
               </div>
               <div className="text-[11px] opacity-80">
-                Usa o motor FFmpeg local para máxima velocidade e suporte a MP3, WAV, M4A e AAC sem retenção de arquivos.
+                Usa o motor FFmpeg (Render ou local) para máxima velocidade e suporte a MP3, WAV, M4A e AAC sem retenção de arquivos.
               </div>
             </button>
 
@@ -339,6 +375,80 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="text-[11px] opacity-80">
                 Decodifica e codifica MP3/WAV inteiramente na memória RAM da aba do navegador.
               </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Render / Native FFmpeg API Connection Panel */}
+        <div
+          className={`p-4 rounded-2xl border mb-4 ${
+            isDark
+              ? 'bg-[#1C1F24] border-[#2D323B]'
+              : 'bg-[#F9FAFB] border-[#E5E7EB]'
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
+              <Server className="w-3.5 h-3.5 text-[#65A30D] dark:text-[#BCEE45]" />
+              <span>Conexão com Servidor FFmpeg (Render / Local)</span>
+            </div>
+
+            <span
+              className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full border ${
+                engineHealth.status === 'online'
+                  ? isDark
+                    ? 'bg-[#BCEE45]/15 border-[#BCEE45]/50 text-[#BCEE45]'
+                    : 'bg-[#ECFCCB] border-[#65A30D]/40 text-[#3F6212]'
+                  : isDark
+                    ? 'bg-[#24282E] border-[#374151] text-[#9CA3AF]'
+                    : 'bg-white border-[#D1D5DB] text-[#525866]'
+              }`}
+            >
+              <Activity className="w-3 h-3" />
+              {engineHealth.status === 'online' ? (
+                <span>
+                  FFmpeg Online
+                  {engineHealth.latencyMs ? ` (${engineHealth.latencyMs} ms)` : ''}
+                </span>
+              ) : engineHealth.status === 'checking' || isTestingConnection ? (
+                <span>Verificando conexão...</span>
+              ) : (
+                <span>Modo Navegador Local Ativo</span>
+              )}
+            </span>
+          </div>
+
+          <p
+            className={`text-xs mb-3 ${
+              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+            }`}
+          >
+            Se o backend FFmpeg estiver hospedado no Render, informe a URL abaixo (ou defina{' '}
+            <code className="font-mono text-[11px]">VITE_API_BASE_URL</code> na Vercel). Em branco, usa o servidor local ou o motor Web Audio do navegador.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              value={apiUrlInput}
+              onChange={(e) => setApiUrlInput(e.target.value)}
+              placeholder="https://sonora-ffmpeg-api.onrender.com"
+              className={`flex-1 px-3.5 py-2 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-[#A3E635] ${
+                isDark
+                  ? 'bg-[#15171A] border-[#2D323B] text-white placeholder-[#6B7280]'
+                  : 'bg-white border-[#D1D5DB] text-[#111315] placeholder-[#9CA3AF]'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={handleTestAndSaveApiUrl}
+              disabled={isTestingConnection}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#BCEE45] hover:bg-[#A3E635] text-[#111315] transition-all cursor-pointer shrink-0 disabled:opacity-60"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isTestingConnection ? 'animate-spin' : ''}`}
+              />
+              <span>{isTestingConnection ? 'Testando...' : 'Salvar e Testar'}</span>
             </button>
           </div>
         </div>
