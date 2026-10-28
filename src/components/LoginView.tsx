@@ -262,8 +262,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
           aria-labelledby="sonora-login-heading"
           className="relative z-10 w-full max-w-[540px] rounded-[28px] bg-[#12161A] border border-[#222830] shadow-[0_24px_64px_rgba(0,0,0,0.68)] px-6 py-6 sm:px-9 sm:py-8"
         >
-          {/* 1. Marca SONORA STUDIO */}
-          <div className="flex justify-center mb-4 sm:mb-5">
+          {/* 1. Marca SONORA STUDIO (oculta no desktop: a marca já aparece sobre o vídeo) */}
+          <div className="flex justify-center mb-4 sm:mb-5 lg:hidden">
             <SonoraBrandMark size="md" centered />
           </div>
 
@@ -273,10 +273,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
               id="sonora-login-heading"
               className="text-2xl sm:text-[28px] xl:text-[31px] font-bold tracking-tight text-[#F7F8F8] leading-tight"
             >
-              Bem-vindo de volta
+              {isRegisterMode ? 'Crie sua conta' : 'Bem-vindo de volta'}
             </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-[#9CA5B2] leading-relaxed">
-              Entre para continuar transformando vídeos em áudio.
+            <p className="mt-1.5 text-sm text-[#9CA5B2] leading-relaxed">
+              {isRegisterMode
+                ? 'Leva menos de um minuto. Depois é só arrastar seu primeiro vídeo.'
+                : 'Entre para continuar transformando vídeos em áudio.'}
             </p>
           </div>
 
@@ -429,6 +431,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 </span>
               </label>
 
+              {!isRegisterMode && (
               <button
                 type="button"
                 onClick={handleForgotPassword}
@@ -437,6 +440,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               >
                 Esqueci minha senha
               </button>
+              )}
             </div>
 
             {/* 9. Botão principal "Entrar" */}
@@ -451,12 +455,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     aria-hidden="true"
                     className="w-5 h-5 animate-spin stroke-[2.5]"
                   />
-                  <span>Entrando...</span>
+                  <span>{isRegisterMode ? 'Criando conta...' : 'Entrando...'}</span>
                 </>
               ) : (
                 <>
                   <LogIn aria-hidden="true" className="w-5 h-5 stroke-[2.4]" />
-                  <span>Entrar</span>
+                  <span>{isRegisterMode ? 'Criar conta' : 'Entrar'}</span>
                 </>
               )}
             </button>
@@ -530,19 +534,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
           {/* 12. Texto "Ainda não tem uma conta? Criar conta" */}
           <p className="mt-5 text-center text-xs sm:text-sm text-[#9CA5B2]">
-            Ainda não tem uma conta?{' '}
+            {isRegisterMode ? 'Já tem uma conta?' : 'Ainda não tem uma conta?'}{' '}
             <button
               type="button"
               onClick={() => {
                 setIsRegisterMode((prev) => !prev)
-                setStatusNotice(
-                  'Preencha seu e-mail e escolha uma senha acima para criar sua conta no SONORA STUDIO.'
-                )
+                setStatusNotice(null)
+                setEmailError(null)
+                setPasswordError(null)
               }}
               disabled={isSubmitting}
               className="font-semibold text-[#B8F238] hover:text-[#cbf764] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8F238] rounded-md px-1 py-0.5 transition-colors duration-180 cursor-pointer"
             >
-              Criar conta
+              {isRegisterMode ? 'Entrar' : 'Criar conta'}
             </button>
           </p>
 

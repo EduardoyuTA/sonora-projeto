@@ -85,7 +85,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             <FileAudio className="w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#65A30D] dark:text-[#BCEE45] mb-0.5">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4D7C0F] dark:text-[#BCEE45] mb-0.5">
               <CheckCircle2 className="w-4 h-4" />
               <span>Seu áudio está pronto!</span>
             </div>

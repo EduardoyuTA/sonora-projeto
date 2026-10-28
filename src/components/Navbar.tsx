@@ -8,7 +8,7 @@ import {
   Sparkles,
   Sun,
 } from 'lucide-react'
-import type { ActiveTab, AuthUser } from '../types/sonora'
+import type { ActiveTab, AuthUser, ProcessingMode } from '../types/sonora'
 
 interface NavbarProps {
   activeTab: ActiveTab
@@ -19,6 +19,7 @@ interface NavbarProps {
   isConverting: boolean
   user?: AuthUser | null
   onLogout?: () => void
+  processingMode?: ProcessingMode
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -30,8 +31,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   isConverting,
   user,
   onLogout,
+  processingMode = 'browser-only',
 }) => {
   const isDark = theme === 'dark'
+  const isLocalOnly = processingMode === 'browser-only'
 
   const navItems: {
     id: ActiveTab
@@ -171,10 +174,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-[#15171A] border-[#24282E] text-[#9CA3AF]'
                   : 'bg-white border-[#E5E7EB] text-[#525866]'
               }`}
-              title="Seus arquivos são processados localmente com privacidade garantida e excluídos automaticamente."
+              title={
+                isLocalOnly
+                  ? 'Seus arquivos são processados apenas no seu navegador e nunca saem do dispositivo.'
+                  : 'Modo híbrido: quando necessário, o vídeo é enviado com segurança ao nosso servidor de conversão e apagado logo após o processamento. Altere em Configurações.'
+              }
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#65A30D] dark:text-[#BCEE45]" />
-              <span>Processamento Local Seguro</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#BCEE45]" />
+              <span>{isLocalOnly ? 'Processamento 100% local' : 'Processamento seguro'}</span>
             </div>
 
             <button
@@ -196,6 +203,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Moon className="w-4 h-4 text-[#525866]" />
               )}
             </button>
+
+            {user && onLogout && (
+              <span
+                className={`hidden lg:inline max-w-[160px] truncate text-xs font-medium ${
+                  isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                }`}
+                title={user.email}
+              >
+                {user.name}
+              </span>
+            )}
 
             {user && onLogout && (
               <button

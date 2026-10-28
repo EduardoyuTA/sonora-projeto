@@ -182,7 +182,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 mb-6 border-b border-[#E5E7EB] dark:border-[#24282E]">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-[#65A30D] dark:text-[#BCEE45]" />
+            <Sliders className="w-5 h-5 text-[#4D7C0F] dark:text-[#BCEE45]" />
             <span>Configurações de saída</span>
           </h3>
           <p
@@ -202,7 +202,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           }`}
           title="Cálculo estimado com base na duração do trecho selecionado e na taxa de bits escolhida."
         >
-          <FileAudio className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <FileAudio className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Tamanho estimado:</span>
           <strong className="font-semibold">~{formatBytes(estimatedSize)}</strong>
         </div>
@@ -349,7 +349,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
           }`}
         >
-          <Info className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45] shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45] shrink-0 mt-0.5" />
           <div>
             <strong className={isDark ? 'text-white' : 'text-[#111315]'}>
               Formato WAV sem compressão selecionado:
@@ -372,7 +372,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           }`}
         >
           <span className="flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+            <Scissors className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
             <span>Configurações avançadas</span>
             <span
               className={`text-xs font-normal ${
@@ -438,7 +438,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 <label className="text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
                   Recortar trecho do vídeo
                 </label>
-                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#BCEE45]/20 text-[#65A30D] dark:text-[#BCEE45] font-semibold">
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] font-semibold">
                   Duração selecionada: {formatDuration(selectedDuration)} (
                   {formatPreciseTime(selectedDuration)}s)
                 </span>
@@ -508,7 +508,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
               >
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="flex items-center gap-1.5 font-medium">
-                    <Volume2 className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+                    <Volume2 className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
                     <span>Volume de saída</span>
                   </span>
                   <span className="font-mono font-semibold">

@@ -469,6 +469,7 @@ export function App() {
         isConverting={conversionState === 'converting'}
         user={authUser}
         onLogout={handleLogout}
+        processingMode={settings.processingMode}
       />
 
       {/* Subtle Floating Toast Feedback */}
@@ -563,7 +564,7 @@ export function App() {
                       : 'bg-white border-[#E5E7EB]'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#65A30D] dark:text-[#BCEE45] mb-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
                     <Zap className="w-4 h-4" />
                   </div>
                   <h2 className="font-semibold text-sm mb-1">
@@ -585,7 +586,7 @@ export function App() {
                       : 'bg-white border-[#E5E7EB]'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#65A30D] dark:text-[#BCEE45] mb-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <h2 className="font-semibold text-sm mb-1">
@@ -596,7 +597,7 @@ export function App() {
                       isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
                     }`}
                   >
-                    Corte trechos exatos, normalize o volume (-16 LUFS) e ouça na forma de onda interativa antes de baixar.
+                    Corte o trecho exato, deixe o volume equilibrado automaticamente e ouça o resultado antes de baixar.
                   </p>
                 </div>
 
@@ -607,7 +608,7 @@ export function App() {
                       : 'bg-white border-[#E5E7EB]'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#65A30D] dark:text-[#BCEE45] mb-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
                     <Shield className="w-4 h-4" />
                   </div>
                   <h2 className="font-semibold text-sm mb-1">
@@ -618,7 +619,7 @@ export function App() {
                       isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
                     }`}
                   >
-                    Zero anúncios, zero rastreamento e exclusão imediata de arquivos temporários após a conversão.
+                    Zero anúncios e zero rastreamento. Prefere que nada saia do seu dispositivo? Ative o modo 100% local em Configurações.
                   </p>
                 </div>
               </section>

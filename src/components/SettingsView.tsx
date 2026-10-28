@@ -102,7 +102,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
-        <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#65A30D] dark:text-[#BCEE45] font-semibold mb-1">
+        <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#4D7C0F] dark:text-[#BCEE45] font-semibold mb-1">
           <Sliders className="w-3.5 h-3.5" />
           <span>Preferências do Sistema</span>
         </div>
@@ -127,7 +127,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }`}
       >
         <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Sun className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <Sun className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Aparência, Acessibilidade e Idioma</span>
         </h2>
 
@@ -189,7 +189,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div className="flex items-center justify-between py-2 px-3 rounded-xl border bg-white/50 dark:bg-[#15171A] border-[#E5E7EB] dark:border-[#2D323B]">
               <span className="inline-flex items-center gap-2 text-xs font-semibold">
-                <Globe className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+                <Globe className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
                 <span>Português (Brasil) — pt-BR</span>
               </span>
               <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#BCEE45] text-[#111315] font-bold">
@@ -242,7 +242,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }`}
       >
         <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <Cpu className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Padrões de Conversão e Motor de Áudio</span>
         </h2>
 
@@ -389,7 +389,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         >
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
-              <Server className="w-3.5 h-3.5 text-[#65A30D] dark:text-[#BCEE45]" />
+              <Server className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#BCEE45]" />
               <span>Conexão com Servidor FFmpeg (Render / Local)</span>
             </div>
 
@@ -496,7 +496,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }`}
       >
         <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <Shield className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Privacidade e Armazenamento Local</span>
         </h2>
 
@@ -555,7 +555,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {clearedBanner ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#65A30D] dark:text-[#BCEE45]">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4D7C0F] dark:text-[#BCEE45]">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Histórico limpo com sucesso!</span>
               </span>
@@ -583,7 +583,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }`}
       >
         <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <HelpCircle className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Limites de Arquivos, Direitos de Uso e Ajuda</span>
         </h2>
 

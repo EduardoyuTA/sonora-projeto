@@ -69,6 +69,9 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
+    // Ignore dragleave fired when the cursor moves onto a child element (avoids flicker)
+    const next = e.relatedTarget as Node | null
+    if (next && e.currentTarget.contains(next)) return
     setIsDragging(false)
     onDragStateChange?.(false)
   }
@@ -123,14 +126,14 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         aria-live="polite"
       >
         {hiddenInput}
-        <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[#BCEE45]/20 text-[#65A30D] dark:text-[#BCEE45]">
+        <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45]">
           <Loader2 className="w-7 h-7 animate-spin" />
         </div>
         <h2 className="text-lg font-semibold mb-1">
-          Verificando integridade e metadados do vídeo...
+          Preparando seu vídeo...
         </h2>
         <p className={`text-sm ${isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'}`}>
-          Validando formato, duração, resolução e trilha de áudio.
+          Conferindo formato, duração e se há uma trilha de áudio. Leva só alguns segundos.
         </p>
       </div>
     )
@@ -229,7 +232,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#65A30D] dark:text-[#BCEE45] font-semibold">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#4D7C0F] dark:text-[#BCEE45] font-semibold">
                   Processando áudio
                 </span>
               </div>
@@ -268,7 +271,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
             }`}
           >
-            <Loader2 className="w-4 h-4 animate-spin text-[#65A30D] dark:text-[#BCEE45]" />
+            <Loader2 className="w-4 h-4 animate-spin text-[#4D7C0F] dark:text-[#BCEE45]" />
             <span>{progressStage || 'Extraindo o áudio...'}</span>
           </p>
 
@@ -283,6 +286,13 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           >
             <X className="w-3.5 h-3.5" />
             <span>Cancelar conversão</span>
+            <kbd
+              className={`hidden sm:inline ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono border ${
+                isDark ? 'border-[#2D323B] text-[#6B7280]' : 'border-[#E5E7EB] text-[#6B7280]'
+              }`}
+            >
+              Esc
+            </kbd>
           </button>
         </div>
       </div>
@@ -318,7 +328,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#65A30D] dark:text-[#BCEE45]">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#4D7C0F] dark:text-[#BCEE45]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Vídeo carregado</span>
                 </span>
@@ -452,7 +462,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         >
           <Film className="w-5 h-5" />
         </div>
-        <div className="text-xs font-mono text-[#65A30D] dark:text-[#BCEE45] font-bold px-1">
+        <div className="text-xs font-mono text-[#4D7C0F] dark:text-[#BCEE45] font-bold px-1">
           →
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#BCEE45] text-[#111315] shadow-xs">
@@ -494,7 +504,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
           }`}
         >
-          <Play className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45]" />
+          <Play className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
           <span>Testar com vídeo de exemplo</span>
         </button>
       </div>

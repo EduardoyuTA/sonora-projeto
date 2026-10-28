@@ -678,12 +678,12 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             >
               {activeTipIndex !== null ? (
                 <>
-                  <Wand2 className="w-3 h-3 text-[#65A30D] dark:text-[#BCEE45]" />
+                  <Wand2 className="w-3 h-3 text-[#4D7C0F] dark:text-[#BCEE45]" />
                   <span>Outra dica / pose</span>
                 </>
               ) : (
                 <>
-                  <MessageCircleHeart className="w-3 h-3 text-[#65A30D] dark:text-[#BCEE45]" />
+                  <MessageCircleHeart className="w-3 h-3 text-[#4D7C0F] dark:text-[#BCEE45]" />
                   <span>Dica da Capivara</span>
                 </>
               )}
@@ -726,13 +726,13 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             aria-hidden="true"
             className="pointer-events-none absolute -top-4 inset-x-0 flex justify-between px-2 z-20"
           >
-            <span className="mascot-note-1 text-sm font-bold text-[#65A30D] dark:text-[#BCEE45] drop-shadow-xs">
+            <span className="mascot-note-1 text-sm font-bold text-[#4D7C0F] dark:text-[#BCEE45] drop-shadow-xs">
               ♪
             </span>
             <span className="mascot-note-2 text-base font-bold text-pink-500 drop-shadow-xs">
               {isPopping ? '♥' : '♫'}
             </span>
-            <span className="mascot-note-3 text-sm font-bold text-[#65A30D] dark:text-[#BCEE45] drop-shadow-xs">
+            <span className="mascot-note-3 text-sm font-bold text-[#4D7C0F] dark:text-[#BCEE45] drop-shadow-xs">
               ♬
             </span>
           </div>

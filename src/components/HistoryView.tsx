@@ -84,7 +84,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#65A30D] dark:text-[#BCEE45] font-semibold mb-1">
+            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#4D7C0F] dark:text-[#BCEE45] font-semibold mb-1">
               <History className="w-3.5 h-3.5" />
               <span>Biblioteca Local</span>
             </div>
@@ -156,7 +156,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
           }`}
         >
-          <HardDrive className="w-4 h-4 text-[#65A30D] dark:text-[#BCEE45] shrink-0" />
+          <HardDrive className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45] shrink-0" />
           <span>
             O histórico utiliza o IndexedDB local deste dispositivo. Limpar os dados de navegação do navegador removerá os arquivos salvos aqui.
           </span>
