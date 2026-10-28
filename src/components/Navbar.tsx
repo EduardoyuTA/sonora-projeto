@@ -1,13 +1,14 @@
 import React from 'react'
 import {
   History,
+  LogOut,
   Moon,
   Settings,
   ShieldCheck,
   Sparkles,
   Sun,
 } from 'lucide-react'
-import type { ActiveTab } from '../types/sonora'
+import type { ActiveTab, AuthUser } from '../types/sonora'
 
 interface NavbarProps {
   activeTab: ActiveTab
@@ -16,6 +17,8 @@ interface NavbarProps {
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   isConverting: boolean
+  user?: AuthUser | null
+  onLogout?: () => void
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +28,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme,
   onToggleTheme,
   isConverting,
+  user,
+  onLogout,
 }) => {
   const isDark = theme === 'dark'
 
@@ -66,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={() => onSelectTab('converter')}
-            className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-xl py-1 pr-2"
+            className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-xl py-1 pr-2 cursor-pointer"
             aria-label="SONORA - Ir para a tela de conversão"
           >
             <div
@@ -121,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`relative flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+                  className={`relative flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
                     active
                       ? isDark
                         ? 'bg-[#24282E] text-white shadow-xs'
@@ -158,8 +163,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Actions: Privacy Indicator & Theme Toggle */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Actions: Privacy Indicator, Theme Toggle & Logout */}
+          <div className="flex items-center gap-2">
             <div
               className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
                 isDark
@@ -175,7 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onToggleTheme}
-              className={`p-2.5 rounded-xl border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+              className={`p-2.5 rounded-xl border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
                 isDark
                   ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6] hover:bg-[#1F2227]'
                   : 'bg-white border-[#E5E7EB] text-[#111315] hover:bg-[#F3F4F6]'
@@ -191,6 +196,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Moon className="w-4 h-4 text-[#525866]" />
               )}
             </button>
+
+            {user && onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+                  isDark
+                    ? 'bg-[#15171A] border-[#24282E] text-[#9CA3AF] hover:text-white hover:bg-[#1F2227]'
+                    : 'bg-white border-[#E5E7EB] text-[#525866] hover:text-[#111315] hover:bg-[#F3F4F6]'
+                }`}
+                title={`Conectado como ${user.email} — Clique para sair`}
+                aria-label="Sair da conta"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sair</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -211,7 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               key={item.id}
               type="button"
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+              className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl text-xs font-medium transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
                 active
                   ? isDark
                     ? 'text-[#BCEE45]'

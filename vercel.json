@@ -21,11 +21,20 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    },
+    {
+      "source": "/capivara-login-boas-vindas-claro.mp4",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|mascote/|samples/|favicon\\.svg|icons\\.svg|mascote\\.png).*)",
+      "source": "/((?!api/|assets/|mascote/|samples/|favicon\\.svg|icons\\.svg|mascote\\.png|capivara-login-boas-vindas-claro\\.mp4|capivara-login-poster\\.jpg).*)",
       "destination": "/index.html"
     }
   ]

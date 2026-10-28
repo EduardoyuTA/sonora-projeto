@@ -1,8 +1,9 @@
-import type { AppSettings, HistoryItem } from '../types/sonora'
+import type { AppSettings, AuthUser, HistoryItem } from '../types/sonora'
 
 const SETTINGS_KEY = 'sonora_app_settings_v1'
 const LAST_CONFIG_KEY = 'sonora_last_config_v1'
 const HISTORY_META_KEY = 'sonora_history_meta_v1'
+const AUTH_SESSION_KEY = 'sonora_auth_session_v1'
 
 const DB_NAME = 'SonoraAudioVaultDB'
 const DB_VERSION = 1
@@ -19,6 +20,42 @@ export const DEFAULT_SETTINGS: AppSettings = {
   processingMode: 'hybrid-auto',
   reducedMotion: false,
   customApiUrl: '',
+}
+
+export function loadAuthSession(): AuthUser | null {
+  try {
+    const rawLocal = localStorage.getItem(AUTH_SESSION_KEY)
+    if (rawLocal) {
+      return JSON.parse(rawLocal) as AuthUser
+    }
+    const rawSession = sessionStorage.getItem(AUTH_SESSION_KEY)
+    if (rawSession) {
+      return JSON.parse(rawSession) as AuthUser
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function saveAuthSession(user: AuthUser): void {
+  try {
+    const serialized = JSON.stringify(user)
+    if (user.rememberMe) {
+      localStorage.setItem(AUTH_SESSION_KEY, serialized)
+      sessionStorage.removeItem(AUTH_SESSION_KEY)
+    } else {
+      sessionStorage.setItem(AUTH_SESSION_KEY, serialized)
+      localStorage.removeItem(AUTH_SESSION_KEY)
+    }
+  } catch {}
+}
+
+export function clearAuthSession(): void {
+  try {
+    localStorage.removeItem(AUTH_SESSION_KEY)
+    sessionStorage.removeItem(AUTH_SESSION_KEY)
+  } catch {}
 }
 
 export function loadSettings(): AppSettings {

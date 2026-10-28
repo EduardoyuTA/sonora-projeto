@@ -89,6 +89,14 @@ export interface NativeEngineHealth {
   engineName?: string
 }
 
+export interface AuthUser {
+  email: string
+  name: string
+  provider: 'email' | 'google' | 'apple'
+  rememberMe: boolean
+  loggedInAt: string
+}
+
 export type ActiveTab = 'converter' | 'historico' | 'configuracoes'
 
 export type MascotMood =

@@ -3,6 +3,7 @@ import { Shield, Sparkles, Zap } from 'lucide-react'
 import type {
   ActiveTab,
   AppSettings,
+  AuthUser,
   ConversionConfig,
   ConversionState,
   ConvertedAudioResult,
@@ -12,11 +13,14 @@ import type {
 } from './types/sonora'
 import {
   clearAllAudioBlobs,
+  clearAuthSession,
   deleteAudioBlob,
   getAudioBlob,
+  loadAuthSession,
   loadHistoryMeta,
   loadLastFormatPreferences,
   loadSettings,
+  saveAuthSession,
   saveHistoryMeta,
   saveLastFormatPreferences,
   saveSettings,
@@ -34,8 +38,12 @@ import { ResultCard } from './components/ResultCard'
 import { HistoryView } from './components/HistoryView'
 import { SettingsView } from './components/SettingsView'
 import { MascotGuide } from './components/MascotGuide'
+import { LoginView } from './components/LoginView'
 
 export function App() {
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() =>
+    loadAuthSession()
+  )
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
   const [activeTab, setActiveTab] = useState<ActiveTab>('converter')
 
@@ -112,6 +120,13 @@ export function App() {
   // Sync theme and reduced motion to document
   useEffect(() => {
     const root = document.documentElement
+    if (!authUser) {
+      root.classList.add('dark')
+      document.body.style.backgroundColor = '#090B0C'
+      document.body.style.color = '#F7F8F8'
+      return
+    }
+
     if (settings.theme === 'dark') {
       root.classList.add('dark')
       document.body.style.backgroundColor = '#0C0D0E'
@@ -121,7 +136,7 @@ export function App() {
       document.body.style.backgroundColor = '#F9FAFB'
       document.body.style.color = '#111315'
     }
-  }, [settings.theme])
+  }, [settings.theme, authUser])
 
   // Pre-warm the Render FFmpeg API when running in hybrid-auto mode
   useEffect(() => {
@@ -129,6 +144,28 @@ export function App() {
       warmupNativeEngine()
     }
   }, [settings.processingMode])
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    saveAuthSession(user)
+    setAuthUser(user)
+    showToast(`Bem-vindo ao SONORA STUDIO, ${user.name}!`)
+    triggerMascotReaction({
+      mood: 'petted',
+      eyebrow: 'Estúdio Liberado!',
+      title: `Oi, ${user.name}! Que bom ter você de volta!`,
+      description:
+        'Arraste seu vídeo para a tela quando quiser extrair a trilha sonora.',
+    })
+  }
+
+  const handleLogout = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    clearAuthSession()
+    setAuthUser(null)
+  }
 
   const handleUpdateSettings = (next: AppSettings) => {
     setSettings(next)
@@ -406,6 +443,15 @@ export function App() {
     showToast('Histórico local limpo.')
   }
 
+  if (!authUser) {
+    return (
+      <LoginView
+        onSuccessLogin={handleLoginSuccess}
+        reducedMotion={settings.reducedMotion}
+      />
+    )
+  }
+
   const isDark = settings.theme === 'dark'
 
   return (
@@ -421,6 +467,8 @@ export function App() {
         theme={settings.theme}
         onToggleTheme={handleToggleTheme}
         isConverting={conversionState === 'converting'}
+        user={authUser}
+        onLogout={handleLogout}
       />
 
       {/* Subtle Floating Toast Feedback */}
