@@ -92,7 +92,8 @@ export interface NativeEngineHealth {
 export interface AuthUser {
   email: string
   name: string
-  provider: 'email' | 'google' | 'apple'
+  // 'guest' = entrou sem conta (dados só neste navegador)
+  provider: 'email' | 'google' | 'guest'
   rememberMe: boolean
   loggedInAt: string
 }

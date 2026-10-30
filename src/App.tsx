@@ -43,10 +43,25 @@ import { HistoryView } from './components/HistoryView'
 import { SettingsView } from './components/SettingsView'
 import { MascotGuide } from './components/MascotGuide'
 import { LoginView } from './components/LoginView'
+import {
+  consumeAuthRedirectParams,
+  getCurrentSession,
+  isAuthConfigured,
+  onAuthChange,
+  signOut,
+  toAuthUser,
+} from './services/authService'
 
 export function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(() =>
     loadAuthSession()
+  )
+  // Enquanto confere a sessão do Supabase, evita piscar a tela de login
+  const [isCheckingAuth, setIsCheckingAuth] = useState(isAuthConfigured)
+  // Usuário chegou pelo link "redefinir senha" do e-mail
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+  const [authRedirectError, setAuthRedirectError] = useState<string | null>(
+    null
   )
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
   const [activeTab, setActiveTab] = useState<ActiveTab>('converter')
@@ -167,13 +182,6 @@ export function App() {
   // Sync theme and reduced motion to document
   useEffect(() => {
     const root = document.documentElement
-    if (!authUser) {
-      root.classList.add('dark')
-      document.body.style.backgroundColor = '#090B0C'
-      document.body.style.color = '#F7F8F8'
-      return
-    }
-
     if (settings.theme === 'dark') {
       root.classList.add('dark')
       document.body.style.backgroundColor = '#070909'
@@ -183,7 +191,49 @@ export function App() {
       document.body.style.backgroundColor = '#EDF1EA'
       document.body.style.color = '#111315'
     }
-  }, [settings.theme, authUser])
+  }, [settings.theme])
+
+  // Sessão real (Supabase): restaura ao abrir e acompanha login/logout/recuperação
+  useEffect(() => {
+    if (!isAuthConfigured) return
+    let cancelled = false
+
+    getCurrentSession()
+      .then((session) => {
+        if (cancelled) return
+        if (session?.user) {
+          clearAuthSession()
+          setAuthUser(toAuthUser(session.user))
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (cancelled) return
+        setAuthRedirectError(consumeAuthRedirectParams())
+        setIsCheckingAuth(false)
+      })
+
+    const unsubscribe = onAuthChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true)
+      }
+      if (event === 'SIGNED_OUT') {
+        setAuthUser((current) =>
+          current?.provider === 'guest' ? current : null
+        )
+        return
+      }
+      if (session?.user) {
+        clearAuthSession()
+        setAuthUser(toAuthUser(session.user))
+      }
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [])
 
   // Pre-warm the Render FFmpeg API when running in hybrid-auto mode
   useEffect(() => {
@@ -193,13 +243,20 @@ export function App() {
   }, [settings.processingMode])
 
   const handleLoginSuccess = (user: AuthUser) => {
-    saveAuthSession(user)
+    if (user.provider === 'guest') saveAuthSession(user)
     setAuthUser(user)
-    showToast(`Bem-vindo ao SONORA STUDIO, ${user.name}!`)
+    const isGuest = user.provider === 'guest'
+    showToast(
+      isGuest
+        ? 'Você entrou sem conta. Seu histórico fica só neste navegador.'
+        : `Bem-vindo ao SONORA STUDIO, ${user.name}!`
+    )
     triggerMascotReaction({
       mood: 'petted',
       eyebrow: 'Estúdio Liberado!',
-      title: `Oi, ${user.name}! Que bom ter você de volta!`,
+      title: isGuest
+        ? 'Oi! Pode chegar, o estúdio é todo seu.'
+        : `Oi, ${user.name}! Que bom ter você aqui!`,
       description:
         'Arraste seu vídeo para a tela quando quiser extrair a trilha sonora.',
     })
@@ -212,6 +269,12 @@ export function App() {
     }
     clearAuthSession()
     setAuthUser(null)
+    signOut().catch(() => {})
+  }
+
+  const handlePasswordUpdated = () => {
+    setIsPasswordRecovery(false)
+    showToast('Senha atualizada! Você já está conectado.')
   }
 
   const handleTalkToMascot = () => {
@@ -494,10 +557,27 @@ export function App() {
     showToast('Histórico local limpo.')
   }
 
-  if (!authUser) {
+  if (isCheckingAuth) {
+    return (
+      <div
+        role="status"
+        aria-label="Carregando SONORA"
+        className="min-h-screen flex items-center justify-center"
+      >
+        <span className="h-8 w-8 rounded-full border-2 border-[#BCEE45]/30 border-t-[#BCEE45] animate-spin" />
+      </div>
+    )
+  }
+
+  if (!authUser || isPasswordRecovery) {
     return (
       <LoginView
         onSuccessLogin={handleLoginSuccess}
+        onPasswordUpdated={handlePasswordUpdated}
+        isPasswordRecovery={isPasswordRecovery}
+        initialError={authRedirectError}
+        theme={settings.theme}
+        onToggleTheme={handleToggleTheme}
         reducedMotion={settings.reducedMotion}
       />
     )

@@ -28,17 +28,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
   customApiUrl: '',
 }
 
+/**
+ * Sessão local usada apenas no modo "Entrar sem conta". Contas reais ficam
+ * com o Supabase (authService). Sessões antigas simuladas são descartadas.
+ */
 export function loadAuthSession(): AuthUser | null {
   try {
-    const rawLocal = localStorage.getItem(AUTH_SESSION_KEY)
-    if (rawLocal) {
-      return JSON.parse(rawLocal) as AuthUser
+    const raw =
+      localStorage.getItem(AUTH_SESSION_KEY) ??
+      sessionStorage.getItem(AUTH_SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as AuthUser
+    if (parsed?.provider !== 'guest') {
+      clearAuthSession()
+      return null
     }
-    const rawSession = sessionStorage.getItem(AUTH_SESSION_KEY)
-    if (rawSession) {
-      return JSON.parse(rawSession) as AuthUser
-    }
-    return null
+    return parsed
   } catch {
     return null
   }

@@ -491,3 +491,106 @@ input[type='range']:focus-visible {
 .motion-reduce .wave-drift,
 .motion-reduce .sparkle { animation: none; }
 }
+
+/* ---------------------------- Tela de login ---------------------------- */
+.login-theme-dark {
+  --lg-page: #06090a;
+  --lg-card: rgba(12, 16, 19, 0.74);
+  --lg-card-border: rgba(255, 255, 255, 0.1);
+  --lg-field: rgba(255, 255, 255, 0.05);
+  --lg-field-border: rgba(255, 255, 255, 0.12);
+  --lg-field-border-hover: rgba(255, 255, 255, 0.22);
+  --lg-text: #f7f8f8;
+  --lg-muted: #a3acb8;
+  --lg-placeholder: #6f7a88;
+  --lg-accent-text: #c6ff4a;
+  --lg-divider: rgba(255, 255, 255, 0.08);
+  --lg-notice-bg: rgba(184, 242, 56, 0.08);
+  --lg-notice-text: #e4f9b8;
+  --lg-bubble: rgba(255, 255, 255, 0.07);
+  --lg-shadow: 0 30px 80px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.login-theme-light {
+  --lg-page: #edf1ea;
+  --lg-card: rgba(255, 255, 255, 0.9);
+  --lg-card-border: rgba(255, 255, 255, 0.7);
+  --lg-field: #f4f7f1;
+  --lg-field-border: #d9ded5;
+  --lg-field-border-hover: #bfc7b8;
+  --lg-text: #111315;
+  --lg-muted: #59626e;
+  --lg-placeholder: #9aa3ad;
+  --lg-accent-text: #4d7c0f;
+  --lg-divider: #e5e9e1;
+  --lg-notice-bg: #f2fbe3;
+  --lg-notice-text: #3f6212;
+  --lg-bubble: #f1f6ea;
+  --lg-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+/* Vídeo da capivara: bordas que se dissolvem no fundo desfocado */
+.login-hero-mask {
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
+@media (min-width: 1024px) {
+  .login-hero-mask {
+    -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 58%, transparent 100%);
+  }
+}
+
+@keyframes login-fade-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.login-fade-in {
+  animation: login-fade-in 0.32s ease-out;
+}
+
+@keyframes login-mascot-pop {
+  0% {
+    scale: 0.85;
+    opacity: 0.4;
+  }
+  60% {
+    scale: 1.06;
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.login-mascot-pop {
+  animation: login-mascot-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes login-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20%,
+  60% {
+    translate: -6px 0;
+  }
+  40%,
+  80% {
+    translate: 6px 0;
+  }
+}
+
+.login-shake {
+  animation: login-shake 0.4s ease-in-out;
+}

@@ -127,7 +127,11 @@ const ThemeAndLogout: React.FC<ThemeLogoutProps> = ({
           type="button"
           onClick={onLogout}
           className={`btn-glass h-12 w-12 rounded-full flex items-center justify-center cursor-pointer ${focusRing}`}
-          title={`Conectado como ${user.email} — Clique para sair`}
+          title={
+            user.provider === 'guest'
+              ? 'Usando sem conta — Clique para sair'
+              : `Conectado como ${user.email} — Clique para sair`
+          }
           aria-label="Sair da conta"
         >
           <LogOut className="h-5 w-5" />
