@@ -8,4 +8,14 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGIN
-        value: "*"
+        sync: false
+      - key: MAX_CONCURRENT_JOBS
+        value: "4"
+      - key: UPLOAD_TIMEOUT_MS
+        value: "300000"
+      - key: FFMPEG_TIMEOUT_MS
+        value: "180000"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: MAX_REQUESTS_PER_WINDOW
+        value: "12"

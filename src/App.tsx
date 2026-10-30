@@ -94,6 +94,8 @@ export function App() {
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const reactionTimerRef = useRef<number | null>(null)
+  const toastTimerRef = useRef<number | null>(null)
+  const historyItemsRef = useRef(historyItems)
 
   const triggerMascotReaction = useCallback(
     (
@@ -117,10 +119,49 @@ export function App() {
   )
 
   const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current)
+    }
     setToastMessage(msg)
-    window.setTimeout(() => {
+    toastTimerRef.current = window.setTimeout(() => {
       setToastMessage((current) => (current === msg ? null : current))
     }, 3500)
+  }, [])
+
+  const commitHistory = useCallback((items: HistoryItem[]) => {
+    historyItemsRef.current = items
+    setHistoryItems(items)
+    saveHistoryMeta(items)
+  }, [])
+
+  useEffect(() => {
+    historyItemsRef.current = historyItems
+  }, [historyItems])
+
+  useEffect(() => {
+    const objectUrl = video?.objectUrl
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [video?.objectUrl])
+
+  useEffect(() => {
+    const objectUrl = result?.objectUrl
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [result?.objectUrl])
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+      if (reactionTimerRef.current) {
+        window.clearTimeout(reactionTimerRef.current)
+      }
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current)
+      }
+    }
   }, [])
 
   // Sync theme and reduced motion to document
@@ -350,9 +391,11 @@ export function App() {
         hasStoredBlob: storedBlobOk,
       }
 
-      const updatedHistory = [newHistoryItem, ...historyItems].slice(0, 30)
-      setHistoryItems(updatedHistory)
-      saveHistoryMeta(updatedHistory)
+      const updatedHistory = [
+        newHistoryItem,
+        ...historyItemsRef.current.filter((item) => item.id !== converted.id),
+      ].slice(0, 30)
+      commitHistory(updatedHistory)
     } catch (err) {
       if ((err as Error)?.name === 'AbortError') {
         setConversionState('loaded')
@@ -439,17 +482,15 @@ export function App() {
   }
 
   const handleRemoveHistoryItem = async (id: string) => {
+    const next = historyItemsRef.current.filter((item) => item.id !== id)
+    commitHistory(next)
     await deleteAudioBlob(id)
-    const next = historyItems.filter((item) => item.id !== id)
-    setHistoryItems(next)
-    saveHistoryMeta(next)
     showToast('Item removido do histórico.')
   }
 
   const handleClearAllHistory = async () => {
+    commitHistory([])
     await clearAllAudioBlobs()
-    setHistoryItems([])
-    saveHistoryMeta([])
     showToast('Histórico local limpo.')
   }
 

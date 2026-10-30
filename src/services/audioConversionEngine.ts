@@ -1,4 +1,3 @@
-import { Mp3Encoder } from '@breezystack/lamejs'
 import type {
   ConversionConfig,
   ConvertedAudioResult,
@@ -25,6 +24,8 @@ export interface ConversionProgressUpdate {
   percent: number
   stage: string
 }
+
+const MAX_BROWSER_WORKING_BYTES = 512 * 1024 * 1024
 
 /**
  * Validates the uploaded file for format, size, and readable video/audio duration.
@@ -249,6 +250,7 @@ async function encodeMp3FromAudioBuffer(
   signal: AbortSignal,
   onProgress: (fraction: number) => void
 ): Promise<Blob> {
+  const { Mp3Encoder } = await import('@breezystack/lamejs')
   const numChannels = Math.min(2, buffer.numberOfChannels)
   const sampleRate = buffer.sampleRate
   const encoder = new Mp3Encoder(numChannels, sampleRate, bitrateKbps)
@@ -257,20 +259,10 @@ async function encodeMp3FromAudioBuffer(
   const rightFloat = numChannels > 1 ? buffer.getChannelData(1) : leftFloat
 
   const totalSamples = leftFloat.length
-  const leftInt16 = new Int16Array(totalSamples)
-  const rightInt16 = new Int16Array(totalSamples)
-
-  for (let i = 0; i < totalSamples; i++) {
-    const l = Math.max(-1, Math.min(1, leftFloat[i]))
-    leftInt16[i] = l < 0 ? l * 0x8000 : l * 0x7fff
-    if (numChannels > 1) {
-      const r = Math.max(-1, Math.min(1, rightFloat[i]))
-      rightInt16[i] = r < 0 ? r * 0x8000 : r * 0x7fff
-    }
-  }
-
-  const mp3Chunks: Uint8Array[] = []
   const sampleBlockSize = 1152 * 16
+  const leftChunk = new Int16Array(sampleBlockSize)
+  const rightChunk = new Int16Array(numChannels > 1 ? sampleBlockSize : 0)
+  const mp3Chunks: Uint8Array[] = []
   let processed = 0
 
   while (processed < totalSamples) {
@@ -279,11 +271,21 @@ async function encodeMp3FromAudioBuffer(
     }
 
     const end = Math.min(processed + sampleBlockSize, totalSamples)
-    const leftChunk = leftInt16.subarray(processed, end)
+    const blockLength = end - processed
+    for (let i = 0; i < blockLength; i++) {
+      const left = Math.max(-1, Math.min(1, leftFloat[processed + i]))
+      leftChunk[i] = left < 0 ? left * 0x8000 : left * 0x7fff
+      if (numChannels > 1) {
+        const right = Math.max(-1, Math.min(1, rightFloat[processed + i]))
+        rightChunk[i] = right < 0 ? right * 0x8000 : right * 0x7fff
+      }
+    }
+
+    const leftBlock = leftChunk.subarray(0, blockLength)
     const mp3buf =
       numChannels > 1
-        ? encoder.encodeBuffer(leftChunk, rightInt16.subarray(processed, end))
-        : encoder.encodeBuffer(leftChunk)
+        ? encoder.encodeBuffer(leftBlock, rightChunk.subarray(0, blockLength))
+        : encoder.encodeBuffer(leftBlock)
 
     if (mp3buf.length > 0) {
       mp3Chunks.push(new Uint8Array(mp3buf))
@@ -629,6 +631,14 @@ async function convertViaBrowserEngine(
   if (video.duration > MAX_BROWSER_DURATION_SECONDS) {
     throw new Error(
       `A conversão no navegador aceita vídeos de até ${MAX_BROWSER_DURATION_LABEL} para evitar falta de memória. Ative o modo híbrido com FFmpeg ou escolha um vídeo mais curto.`
+    )
+  }
+
+  const decodedPcmBytes = video.duration * 48_000 * 2 * 4
+  const estimatedWorkingBytes = video.size + decodedPcmBytes * 2.25
+  if (estimatedWorkingBytes > MAX_BROWSER_WORKING_BYTES) {
+    throw new Error(
+      'Este vídeo exigiria memória demais para uma conversão segura no navegador. Ative o modo híbrido com FFmpeg ou escolha um vídeo mais curto.'
     )
   }
 
