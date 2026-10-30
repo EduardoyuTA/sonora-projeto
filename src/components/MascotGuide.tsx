@@ -41,6 +41,8 @@ interface MascotGuideProps {
     title: string
     description: string
   } | null
+  // Increment to open the speech bubble (e.g. "Falar com a Capivara" button)
+  talkRequest?: number
 }
 
 interface StudioTip {
@@ -200,11 +202,15 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
   video,
   historyCount = 0,
   customReaction,
+  talkRequest = 0,
 }) => {
   const isDark = theme === 'dark'
   const [isPopping, setIsPopping] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const [dismissedEventKey, setDismissedEventKey] = useState<string | null>(null)
+  const currentEventKey = `${activeTab}:${state}:${isDraggingFile ? 'drag' : ''}:${isAudioPlaying ? 'play' : ''}:${customReaction?.title || ''}:${talkRequest}`
+  const [dismissedEventKey, setDismissedEventKey] = useState<string | null>(
+    () => currentEventKey
+  )
   const [petCount, setPetCount] = useState(0)
   const [tipSelection, setTipSelection] = useState<{
     forState: ConversionState
@@ -212,7 +218,6 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
     index: number
   } | null>(null)
 
-  const currentEventKey = `${activeTab}:${state}:${isDraggingFile ? 'drag' : ''}:${isAudioPlaying ? 'play' : ''}:${customReaction?.title || ''}`
   const isBubbleOpen = dismissedEventKey !== currentEventKey
 
   const activeTipIndex =
@@ -507,56 +512,56 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
     switch (mood) {
       case 'dragging':
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'validating':
         return (
-          <span className="bg-amber-400 text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-amber-400 text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Search className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'converting':
       case 'grooving':
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Headphones className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'trimming':
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Scissors className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'tuning':
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Volume2 className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'success':
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'error':
         return (
-          <span className="bg-red-500 text-white p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
+          <span className="bg-red-500 text-white inline-flex p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
             <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5]" />
           </span>
         )
       case 'petted':
         return (
-          <span className="bg-pink-500 text-white p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
+          <span className="bg-pink-500 text-white inline-flex p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
             <Heart className="w-3.5 h-3.5 fill-current" />
           </span>
         )
       default:
         return (
-          <span className="bg-[#BCEE45] text-[#111315] p-1.5 rounded-full shadow-md border-2 border-[#111315]">
+          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
             <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />
           </span>
         )
@@ -567,7 +572,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
     <aside
       aria-live="polite"
       aria-label="Assistente mascote Capivara do SONORA"
-      className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-40 flex flex-col items-end pointer-events-none select-none"
+      className="fixed left-1 bottom-[5.6rem] lg:left-12 lg:bottom-[6.5rem] z-[45] flex flex-col items-start pointer-events-none select-none"
     >
       {/* Floating Speech Bubble */}
       {isBubbleOpen && (
@@ -701,7 +706,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
           {/* Speech Bubble Pointer Tail */}
           <div
             aria-hidden="true"
-            className={`absolute -bottom-2 right-10 h-3.5 w-3.5 rotate-45 border-r border-b ${
+            className={`absolute -bottom-2 left-10 h-3.5 w-3.5 rotate-45 border-r border-b ${
               mood === 'dragging'
                 ? isDark
                   ? 'border-[#BCEE45] bg-[#181E14]'
@@ -753,22 +758,6 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
           }`}
         />
 
-        {/* Minimized Bubble Notification Pill when Bubble is Closed */}
-        {!isBubbleOpen && (
-          <button
-            type="button"
-            onClick={() => setDismissedEventKey(null)}
-            className={`mb-1.5 mr-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold shadow-md border transition-transform hover:scale-105 cursor-pointer ${
-              isDark
-                ? 'bg-[#15171A] border-[#BCEE45]/60 text-[#BCEE45]'
-                : 'bg-white border-[#65A30D] text-[#3F6212]'
-            }`}
-          >
-            <MessageCircleHeart className="w-3.5 h-3.5" />
-            <span>Falar com a Capivara</span>
-          </button>
-        )}
-
         <button
           type="button"
           onClick={handleInteractMascot}
@@ -776,7 +765,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
           onMouseLeave={() => setIsHovered(false)}
           title="Clique na capivara para interagir, trocar de pose e ver dicas de estúdio!"
           aria-label="Interagir com o mascote capivara do SONORA"
-          className={`group relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-full ${animationClass}`}
+          className={`group relative flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 lg:w-32 lg:h-32 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-full ${animationClass}`}
         >
           <img
             key={mascotImageSrc}

@@ -1,12 +1,14 @@
 import React, { useRef, useState } from 'react'
 import {
   AlertCircle,
+  ChevronRight,
+  Database,
+  FileVideo,
+  MessageCircle,
   AudioWaveform,
   CheckCircle2,
-  Film,
   FolderOpen,
   Loader2,
-  Music,
   Play,
   RefreshCw,
   Trash2,
@@ -20,6 +22,7 @@ import {
   formatBytes,
   formatDuration,
 } from '../utils/formatters'
+import { HeroArt } from './HeroArt'
 
 interface UploadZoneProps {
   state: ConversionState
@@ -34,6 +37,7 @@ interface UploadZoneProps {
   onRetry: () => void
   theme: 'light' | 'dark'
   onDragStateChange?: (isDragging: boolean) => void
+  onTalkToMascot: () => void
 }
 
 export const UploadZone: React.FC<UploadZoneProps> = ({
@@ -49,6 +53,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   onRetry,
   theme,
   onDragStateChange,
+  onTalkToMascot,
 }) => {
   const isDark = theme === 'dark'
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -118,9 +123,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     return (
       <div
         className={`rounded-3xl border p-8 sm:p-10 text-center transition-all ${
-          isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
+          'glass text-strong'
         }`}
         role="status"
         aria-live="polite"
@@ -217,9 +220,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     return (
       <div
         className={`rounded-3xl border p-7 sm:p-9 transition-all ${
-          isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-sm'
+          'glass text-strong'
         }`}
         role="status"
         aria-live="polite"
@@ -304,9 +305,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     return (
       <div
         className={`rounded-3xl border p-5 sm:p-6 transition-all ${
-          isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
+          'glass text-strong'
         }`}
       >
         {hiddenInput}
@@ -428,109 +427,224 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   }
 
   // 1, 2, 3. INITIAL / HOVER / DRAGGING STATE
+  const formatsLabel = ACCEPTED_VIDEO_EXTENSIONS.map((e) =>
+    e.replace('.', '').toUpperCase()
+  ).join(', ')
+
+  const dragProps = {
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+  }
+
+  const subtitle = isDragging
+    ? 'Solte o vídeo aqui para iniciar a preparação imediata.'
+    : 'Extraia músicas, trilhas sonoras, podcasts e instrumentais com fidelidade de estúdio em segundos.'
+
   return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`relative rounded-3xl border-2 border-dashed p-7 sm:p-12 text-center transition-all duration-200 ${
-        isDragging
-          ? isDark
-            ? 'border-[#BCEE45] bg-[#BCEE45]/10 scale-[1.01]'
-            : 'border-[#65A30D] bg-[#ECFCCB]/60 scale-[1.01]'
-          : isHovered
-            ? isDark
-              ? 'border-[#374151] bg-[#15171A]'
-              : 'border-[#CBD5E1] bg-white shadow-sm'
-            : isDark
-              ? 'border-[#24282E] bg-[#15171A]/90'
-              : 'border-[#E5E7EB] bg-white'
-      }`}
-    >
+    <>
       {hiddenInput}
 
-      {/* Dual Icon representing Video -> Audio */}
-      <div className="inline-flex items-center justify-center gap-2 p-3 rounded-2xl mb-5 border bg-gradient-to-b from-transparent to-black/[0.02] dark:to-white/[0.02] border-[#E5E7EB] dark:border-[#24282E]">
+      {/* ---------------- Mobile / tablet: single glass card ---------------- */}
+      <section
+        {...dragProps}
+        aria-label="Converter vídeo em áudio"
+        className={`glass glass-rim glass-glow lg:hidden rounded-[34px] px-4 pt-4 pb-5 text-center transition-transform duration-200 ${
+          isDragging ? 'scale-[1.01] ring-2 ring-[#BCEE45]' : ''
+        }`}
+      >
+        <HeroArt variant="mobile" />
+
+        <h1 className="text-strong mt-2 text-[2rem] sm:text-4xl font-bold leading-[1.1] tracking-tight">
+          Transforme vídeos
+          <br />
+          em áudio
+        </h1>
+        <p className="text-muted mx-auto mt-3 max-w-sm text-[15px] leading-relaxed">
+          {subtitle}
+        </p>
+
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            onClick={triggerFileBrowser}
+            className="btn-lime flex w-full items-center gap-4 rounded-full p-2 pr-6 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#BCEE45]"
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <Upload className="h-6 w-6" strokeWidth={2.2} />
+            </span>
+            <span className="flex-1 text-xl font-bold">Selecionar vídeo</span>
+            <ChevronRight className="h-6 w-6" strokeWidth={2.2} />
+          </button>
+
+          <button
+            type="button"
+            onClick={onLoadDemoVideo}
+            className="btn-glass flex w-full items-center gap-3 rounded-full p-2 pr-4 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+          >
+            <span className="icon-orb h-12 w-12 shrink-0">
+              <Play className="text-accent h-5 w-5" strokeWidth={2} />
+            </span>
+            <span className="flex-1 whitespace-nowrap text-[15px] font-medium leading-tight">
+              Testar com vídeo de exemplo
+            </span>
+            <ChevronRight className="text-muted h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="glass-soft mt-4 rounded-[26px] px-4 text-left">
+          <InfoRow
+            icon={<FileVideo className="h-6 w-6" strokeWidth={1.8} />}
+            title="Formatos aceitos"
+            detail={formatsLabel}
+            onClick={triggerFileBrowser}
+          />
+          <div className="ml-16 h-px bg-[var(--glass-hairline)]" />
+          <InfoRow
+            icon={<Database className="h-6 w-6" strokeWidth={1.8} />}
+            title="Tamanho máximo"
+            detail={MAX_FILE_SIZE_LABEL}
+            onClick={triggerFileBrowser}
+          />
+        </div>
+
+        {/* Bottom row: the mascot floats on the left, chat pill on the right */}
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={onTalkToMascot}
+            className="btn-glass inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+          >
+            <MessageCircle className="text-accent h-5 w-5" strokeWidth={2} />
+            <span>Falar com a Capivara</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </section>
+
+      {/* ---------------- Desktop: hero + dropzone + info cards ---------------- */}
+      <section
+        aria-label="Converter vídeo em áudio"
+        className="glass glass-rim glass-glow hidden lg:block overflow-hidden rounded-[32px] p-8 xl:p-10"
+      >
+        <div className="grid grid-cols-[1fr_minmax(300px,0.9fr)] items-center gap-6">
+          <div>
+            <h1 className="text-strong text-5xl 2xl:text-6xl font-extrabold leading-[1.02] tracking-tight">
+              Transforme
+              <br />
+              vídeos em <span className="text-accent">áudio</span>
+            </h1>
+            <p className="text-muted mt-5 max-w-lg text-lg leading-relaxed">
+              {subtitle}
+            </p>
+          </div>
+          <HeroArt variant="desktop" />
+        </div>
+
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isDark
-              ? 'bg-[#24282E] text-[#F3F4F6]'
-              : 'bg-[#F1F3F5] text-[#111315]'
+          {...dragProps}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`dropzone-dashed mt-8 rounded-[26px] p-5 text-center transition-all duration-200 ${
+            isDragging
+              ? 'border-[#BCEE45]! bg-[#BCEE45]/10 scale-[1.01]'
+              : isHovered
+                ? 'bg-[var(--glass-bg-soft)]'
+                : ''
           }`}
         >
-          <Film className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={triggerFileBrowser}
+            className="glass-soft mx-auto mt-3 flex h-20 w-24 items-center justify-center rounded-3xl cursor-pointer transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+            aria-label="Selecionar vídeo"
+          >
+            <Upload className="text-strong h-8 w-8" strokeWidth={2} />
+          </button>
+          <p className="text-strong mt-5 text-xl font-semibold">
+            {isDragging ? 'Pode soltar!' : 'Arraste e solte seu vídeo aqui'}
+          </p>
+          <p className="text-muted mt-1.5">
+            ou{' '}
+            <button
+              type="button"
+              onClick={triggerFileBrowser}
+              className="text-accent font-medium hover:underline cursor-pointer focus:outline-none focus-visible:underline"
+            >
+              clique para selecionar
+            </button>
+          </p>
+          <p className="text-faint mt-3 text-sm">
+            {formatsLabel} <span className="mx-2">•</span> Até {MAX_FILE_SIZE_LABEL}
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={triggerFileBrowser}
+              className="btn-lime flex items-center justify-center gap-3 rounded-2xl py-4 text-lg font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#BCEE45]"
+            >
+              <FolderOpen className="h-6 w-6" strokeWidth={2} />
+              <span>Selecionar vídeo</span>
+            </button>
+            <button
+              type="button"
+              onClick={onLoadDemoVideo}
+              className="btn-glass flex items-center justify-center gap-3 rounded-2xl py-4 text-lg font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+            >
+              <Play className="text-accent h-6 w-6" strokeWidth={2} />
+              <span>Testar com vídeo de exemplo</span>
+            </button>
+          </div>
         </div>
-        <div className="text-xs font-mono text-[#4D7C0F] dark:text-[#BCEE45] font-bold px-1">
-          →
+
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <InfoCard
+            icon={<FileVideo className="h-6 w-6" strokeWidth={1.8} />}
+            title="Formatos aceitos"
+            detail={formatsLabel}
+          />
+          <InfoCard
+            icon={<Database className="h-6 w-6" strokeWidth={1.8} />}
+            title="Tamanho máximo"
+            detail={MAX_FILE_SIZE_LABEL}
+          />
         </div>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#BCEE45] text-[#111315] shadow-xs">
-          <Music className="w-5 h-5" />
-        </div>
-      </div>
-
-      {/* Main Title & Subtitle */}
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-        Transforme vídeos em áudio
-      </h1>
-      <p
-        className={`text-sm sm:text-base max-w-md mx-auto mb-7 ${
-          isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
-        }`}
-      >
-        {isDragging
-          ? 'Solte o vídeo aqui para iniciar a preparação imediata'
-          : 'Extraia músicas, trilhas sonoras, podcasts e instrumentais com fidelidade de estúdio em segundos.'}
-      </p>
-
-      {/* Primary CTA Button + Demo Video Option */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7">
-        <button
-          type="button"
-          onClick={triggerFileBrowser}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl font-semibold text-base bg-[#BCEE45] hover:bg-[#A3E635] active:scale-[0.99] text-[#111315] shadow-xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#A3E635]"
-        >
-          <Upload className="w-5 h-5 stroke-[2.2]" />
-          <span>Selecionar vídeo</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onLoadDemoVideo}
-          className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-medium text-sm border transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
-            isDark
-              ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:bg-[#24282E]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
-          }`}
-        >
-          <Play className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-          <span>Testar com vídeo de exemplo</span>
-        </button>
-      </div>
-
-      {/* Accepted Formats & Size Limit Metadata */}
-      <div
-        className={`inline-flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-2 rounded-xl text-xs ${
-          isDark
-            ? 'bg-[#1C1F24]/80 text-[#9CA3AF]'
-            : 'bg-[#F9FAFB] text-[#525866]'
-        }`}
-      >
-        <span>
-          <strong className={isDark ? 'text-[#F3F4F6]' : 'text-[#111315]'}>
-            Formatos aceitos:
-          </strong>{' '}
-          {ACCEPTED_VIDEO_EXTENSIONS.map((e) => e.replace('.', '').toUpperCase()).join(', ')}
-        </span>
-        <span className="hidden sm:inline">•</span>
-        <span>
-          <strong className={isDark ? 'text-[#F3F4F6]' : 'text-[#111315]'}>
-            Tamanho máximo:
-          </strong>{' '}
-          {MAX_FILE_SIZE_LABEL}
-        </span>
-      </div>
-    </div>
+      </section>
+    </>
   )
 }
+
+const InfoRow: React.FC<{
+  icon: React.ReactNode
+  title: string
+  detail: string
+  onClick: () => void
+}> = ({ icon, title, detail, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex w-full items-center gap-4 rounded-2xl py-3.5 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+  >
+    <span className="icon-orb h-12 w-12 shrink-0">{icon}</span>
+    <span className="min-w-0 flex-1">
+      <span className="text-strong block text-base font-semibold">{title}</span>
+      <span className="text-muted block text-sm leading-snug">{detail}</span>
+    </span>
+    <ChevronRight className="text-muted h-5 w-5 shrink-0" />
+  </button>
+)
+
+const InfoCard: React.FC<{
+  icon: React.ReactNode
+  title: string
+  detail: string
+}> = ({ icon, title, detail }) => (
+  <div className="glass-soft flex items-center gap-5 rounded-[22px] p-5">
+    <span className="icon-orb h-16 w-16 shrink-0">{icon}</span>
+    <div className="min-w-0">
+      <p className="text-strong text-lg font-semibold">{title}</p>
+      <p className="text-muted mt-0.5 leading-snug">{detail}</p>
+    </div>
+  </div>
+)

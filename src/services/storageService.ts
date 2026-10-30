@@ -10,7 +10,7 @@ const DB_VERSION = 1
 const STORE_NAME = 'audio_blobs'
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'light',
+  theme: 'dark',
   language: 'pt-BR',
   defaultFormat: 'mp3',
   defaultQualityTier: 'padrao',

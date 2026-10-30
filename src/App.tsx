@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Shield, Sparkles, Zap } from 'lucide-react'
 import type {
   ActiveTab,
   AppSettings,
@@ -31,7 +30,12 @@ import {
   validateAndProbeVideo,
   warmupNativeEngine,
 } from './services/audioConversionEngine'
-import { Navbar } from './components/Navbar'
+import {
+  DesktopTopBar,
+  MobileHeader,
+  MobileTabBar,
+  Sidebar,
+} from './components/Navbar'
 import { UploadZone } from './components/UploadZone'
 import { ConversionSettingsPanel } from './components/ConversionSettingsPanel'
 import { ResultCard } from './components/ResultCard'
@@ -86,6 +90,8 @@ export function App() {
     description: string
   } | null>(null)
 
+  const [talkRequest, setTalkRequest] = useState(0)
+
   const abortControllerRef = useRef<AbortController | null>(null)
   const reactionTimerRef = useRef<number | null>(null)
 
@@ -129,11 +135,11 @@ export function App() {
 
     if (settings.theme === 'dark') {
       root.classList.add('dark')
-      document.body.style.backgroundColor = '#0C0D0E'
+      document.body.style.backgroundColor = '#070909'
       document.body.style.color = '#F3F4F6'
     } else {
       root.classList.remove('dark')
-      document.body.style.backgroundColor = '#F9FAFB'
+      document.body.style.backgroundColor = '#EDF1EA'
       document.body.style.color = '#111315'
     }
   }, [settings.theme, authUser])
@@ -165,6 +171,10 @@ export function App() {
     }
     clearAuthSession()
     setAuthUser(null)
+  }
+
+  const handleTalkToMascot = () => {
+    setTalkRequest((n) => n + 1)
   }
 
   const handleUpdateSettings = (next: AppSettings) => {
@@ -452,39 +462,29 @@ export function App() {
     )
   }
 
-  const isDark = settings.theme === 'dark'
+  const isConverting = conversionState === 'converting'
 
   return (
     <div
-      className={`min-h-screen flex flex-col pb-20 md:pb-12 ${
+      className={`relative min-h-screen ${
         settings.reducedMotion ? 'motion-reduce' : ''
       }`}
     >
-      <Navbar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        historyCount={historyItems.length}
-        theme={settings.theme}
-        onToggleTheme={handleToggleTheme}
-        isConverting={conversionState === 'converting'}
-        user={authUser}
-        onLogout={handleLogout}
-        processingMode={settings.processingMode}
-      />
+      <div className="app-backdrop" aria-hidden="true" />
 
       {/* Subtle Floating Toast Feedback */}
       {toastMessage && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 md:bottom-6 left-4 sm:left-6 z-50 px-4 py-3 rounded-2xl text-xs font-semibold shadow-lg border bg-[#111315] text-white border-[#2D323B] flex items-center gap-2"
+          className="glass fixed top-4 left-1/2 z-50 -translate-x-1/2 px-4 py-3 rounded-2xl text-xs font-semibold text-strong flex items-center gap-2"
         >
           <span className="w-2 h-2 rounded-full bg-[#BCEE45]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Interactive Capybara Mascot fixed in the bottom-right corner */}
+      {/* Interactive Capybara Mascot (bottom-left; sits in the sidebar on desktop) */}
       <MascotGuide
         state={conversionState}
         activeTab={activeTab}
@@ -497,10 +497,43 @@ export function App() {
         video={video}
         historyCount={historyItems.length}
         customReaction={customMascotReaction}
+        talkRequest={talkRequest}
       />
 
+      <MobileTabBar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        historyCount={historyItems.length}
+        isConverting={isConverting}
+      />
+
+      <div className="lg:flex lg:gap-5 lg:p-5">
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          historyCount={historyItems.length}
+          isConverting={isConverting}
+          onTalkToMascot={handleTalkToMascot}
+        />
+
+        <div className="flex-1 min-w-0 flex flex-col min-h-screen lg:min-h-[calc(100dvh-2.5rem)] px-3 sm:px-6 lg:px-0 pb-44 lg:pb-0">
+          <MobileHeader
+            onSelectTab={setActiveTab}
+            theme={settings.theme}
+            onToggleTheme={handleToggleTheme}
+            user={authUser}
+            onLogout={handleLogout}
+          />
+          <DesktopTopBar
+            processingMode={settings.processingMode}
+            theme={settings.theme}
+            onToggleTheme={handleToggleTheme}
+            user={authUser}
+            onLogout={handleLogout}
+          />
+
       {/* Main Content Container */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+      <main className="flex-1 w-full max-w-xl lg:max-w-6xl mx-auto">
         {activeTab === 'converter' && (
           <div className="space-y-6">
             {/* Upload / Active Video Zone */}
@@ -524,6 +557,7 @@ export function App() {
               }}
               theme={settings.theme}
               onDragStateChange={setIsDraggingFile}
+              onTalkToMascot={handleTalkToMascot}
             />
 
             {/* Settings Panel when video is loaded */}
@@ -551,79 +585,6 @@ export function App() {
               />
             )}
 
-            {/* Value Proposition Pillars when idle */}
-            {conversionState === 'idle' && (
-              <section
-                aria-label="Diferenciais do SONORA"
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
-              >
-                <div
-                  className={`p-5 rounded-2xl border ${
-                    isDark
-                      ? 'bg-[#15171A]/70 border-[#24282E]'
-                      : 'bg-white border-[#E5E7EB]'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                  <h2 className="font-semibold text-sm mb-1">
-                    Extração Instantânea
-                  </h2>
-                  <p
-                    className={`text-xs leading-relaxed ${
-                      isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
-                    }`}
-                  >
-                    Motor híbrido com FFmpeg nativo e Web Audio para converter em MP3, WAV, M4A ou AAC em segundos.
-                  </p>
-                </div>
-
-                <div
-                  className={`p-5 rounded-2xl border ${
-                    isDark
-                      ? 'bg-[#15171A]/70 border-[#24282E]'
-                      : 'bg-white border-[#E5E7EB]'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <h2 className="font-semibold text-sm mb-1">
-                    Fidelidade de Estúdio
-                  </h2>
-                  <p
-                    className={`text-xs leading-relaxed ${
-                      isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
-                    }`}
-                  >
-                    Corte o trecho exato, deixe o volume equilibrado automaticamente e ouça o resultado antes de baixar.
-                  </p>
-                </div>
-
-                <div
-                  className={`p-5 rounded-2xl border ${
-                    isDark
-                      ? 'bg-[#15171A]/70 border-[#24282E]'
-                      : 'bg-white border-[#E5E7EB]'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] mb-3">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <h2 className="font-semibold text-sm mb-1">
-                    Privacidade Absoluta
-                  </h2>
-                  <p
-                    className={`text-xs leading-relaxed ${
-                      isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
-                    }`}
-                  >
-                    Zero anúncios e zero rastreamento. Prefere que nada saia do seu dispositivo? Ative o modo 100% local em Configurações.
-                  </p>
-                </div>
-              </section>
-            )}
           </div>
         )}
 
@@ -652,23 +613,18 @@ export function App() {
         )}
       </main>
 
-      {/* Minimalist Footer */}
-      <footer
-        className={`mt-14 py-6 border-t text-xs ${
-          isDark
-            ? 'border-[#24282E] text-[#9CA3AF]'
-            : 'border-[#E5E7EB] text-[#525866]'
-        }`}
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+      <footer className="text-faint mt-10 py-6 text-xs">
+        <div className="max-w-xl lg:max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-2 text-center lg:text-left">
           <span>
-            <strong>SONORA</strong> — Conversão de vídeo para áudio com precisão e privacidade.
+            <strong className="text-muted">SONORA</strong> — Conversão de vídeo para áudio com precisão e privacidade.
           </span>
           <span>
             Extraia áudio apenas de conteúdos que você possui autorização para utilizar.
           </span>
         </div>
       </footer>
+        </div>
+      </div>
     </div>
   )
 }
