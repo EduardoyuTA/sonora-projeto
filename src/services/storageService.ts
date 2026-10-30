@@ -1,9 +1,15 @@
-import type { AppSettings, AuthUser, HistoryItem } from '../types/sonora'
+import type {
+  AppSettings,
+  AuthUser,
+  HistoryItem,
+  MascotPrefs,
+} from '../types/sonora'
 
 const SETTINGS_KEY = 'sonora_app_settings_v1'
 const LAST_CONFIG_KEY = 'sonora_last_config_v1'
 const HISTORY_META_KEY = 'sonora_history_meta_v1'
 const AUTH_SESSION_KEY = 'sonora_auth_session_v1'
+const MASCOT_PREFS_KEY = 'sonora_mascot_prefs_v1'
 
 const DB_NAME = 'SonoraAudioVaultDB'
 const DB_VERSION = 1
@@ -56,6 +62,34 @@ export function clearAuthSession(): void {
     localStorage.removeItem(AUTH_SESSION_KEY)
     sessionStorage.removeItem(AUTH_SESSION_KEY)
   } catch {}
+}
+
+const DEFAULT_MASCOT_PREFS: MascotPrefs = { minimized: false, position: null }
+
+export function loadMascotPrefs(): MascotPrefs {
+  try {
+    const raw = localStorage.getItem(MASCOT_PREFS_KEY)
+    if (!raw) return DEFAULT_MASCOT_PREFS
+    const parsed = JSON.parse(raw) as Partial<MascotPrefs>
+    const position = parsed.position
+    const validPosition =
+      position &&
+      Number.isFinite(position.x) &&
+      Number.isFinite(position.y)
+        ? { x: position.x, y: position.y }
+        : null
+    return { minimized: parsed.minimized === true, position: validPosition }
+  } catch {
+    return DEFAULT_MASCOT_PREFS
+  }
+}
+
+export function saveMascotPrefs(prefs: MascotPrefs): void {
+  try {
+    localStorage.setItem(MASCOT_PREFS_KEY, JSON.stringify(prefs))
+  } catch {
+    // Ignore storage quota errors
+  }
 }
 
 export function loadSettings(): AppSettings {

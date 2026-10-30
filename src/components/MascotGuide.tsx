@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -7,6 +7,8 @@ import {
   Heart,
   Headphones,
   MessageCircleHeart,
+  Minus,
+  Move,
   Music,
   Scissors,
   Search,
@@ -20,9 +22,66 @@ import type {
   ConversionConfig,
   ConversionState,
   MascotMood,
+  MascotPosition,
   VideoMetadata,
 } from '../types/sonora'
 import { formatDuration } from '../utils/formatters'
+import { loadMascotPrefs, saveMascotPrefs } from '../services/storageService'
+
+// Distância mínima (px) para um toque virar arraste em vez de clique
+const DRAG_THRESHOLD_PX = 6
+const VIEWPORT_MARGIN_PX = 8
+// Abaixo dessa altura do topo, o balão abre embaixo da capivara
+const BUBBLE_FLIP_TOP_PX = 280
+const KEYBOARD_STEP_PX = 16
+// Quanto do caminho até o ponteiro a capivara percorre por frame (0–1)
+const GLIDE_FOLLOW = 0.22
+const MAX_TILT_DEG = 14
+
+// Ao pegar: cresce um pouco e ganha sombra; ao soltar: assenta com leve quique
+function liftStyle(isLifted: boolean): React.CSSProperties {
+  return {
+    transform: `scale(${isLifted ? 1.08 : 1}) rotate(var(--mascot-tilt, 0deg))`,
+    transformOrigin: '50% 85%',
+    filter: isLifted
+      ? 'drop-shadow(0 16px 14px rgba(0, 0, 0, 0.28))'
+      : 'drop-shadow(0 0 0 rgba(0, 0, 0, 0))',
+    transition: isLifted
+      ? 'transform 180ms ease-out, filter 220ms ease-out'
+      : 'transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 320ms ease-out',
+    willChange: 'transform',
+  }
+}
+
+function clampToViewport(
+  pos: MascotPosition,
+  width: number,
+  height: number
+): MascotPosition {
+  const maxX = Math.max(
+    VIEWPORT_MARGIN_PX,
+    window.innerWidth - width - VIEWPORT_MARGIN_PX
+  )
+  const maxY = Math.max(
+    VIEWPORT_MARGIN_PX,
+    window.innerHeight - height - VIEWPORT_MARGIN_PX
+  )
+  return {
+    x: Math.round(Math.min(Math.max(pos.x, VIEWPORT_MARGIN_PX), maxX)),
+    y: Math.round(Math.min(Math.max(pos.y, VIEWPORT_MARGIN_PX), maxY)),
+  }
+}
+
+interface DragSession {
+  pointerId: number
+  startX: number
+  startY: number
+  originX: number
+  originY: number
+  width: number
+  height: number
+  moved: boolean
+}
 
 interface MascotGuideProps {
   state: ConversionState
@@ -218,7 +277,248 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
     index: number
   } | null>(null)
 
-  const isBubbleOpen = dismissedEventKey !== currentEventKey
+  const [initialPrefs] = useState(loadMascotPrefs)
+  const [isMinimized, setIsMinimized] = useState(initialPrefs.minimized)
+  const [position, setPosition] = useState<MascotPosition | null>(
+    initialPrefs.position
+  )
+  const [isDragging, setIsDragging] = useState(false)
+  const asideRef = useRef<HTMLElement | null>(null)
+  const liftRef = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<DragSession | null>(null)
+  const suppressClickRef = useRef(false)
+  // Movimento suave: a capivara persegue o alvo com inércia a cada frame,
+  // escrevendo direto no DOM (sem re-render) e salvando no estado ao parar.
+  const glideRef = useRef<{
+    live: MascotPosition
+    target: MascotPosition
+    tilt: number
+    lastTime: number
+    frame: number | null
+  } | null>(null)
+
+  useEffect(() => {
+    return () => {
+      const frame = glideRef.current?.frame
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  const prefersReducedMotion = () =>
+    Boolean(asideRef.current?.closest('.motion-reduce')) ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  const runGlideFrame = (now: number) => {
+    const glide = glideRef.current
+    const el = asideRef.current
+    if (!glide || !el) return
+
+    // Fator de suavização independente da taxa de quadros (~60 fps = 0.22)
+    const dt = Math.min(64, now - glide.lastTime || 16.7)
+    glide.lastTime = now
+    const follow = prefersReducedMotion()
+      ? 1
+      : 1 - Math.pow(1 - GLIDE_FOLLOW, dt / 16.7)
+
+    const prevX = glide.live.x
+    glide.live = {
+      x: glide.live.x + (glide.target.x - glide.live.x) * follow,
+      y: glide.live.y + (glide.target.y - glide.live.y) * follow,
+    }
+
+    // Inclina na direção do movimento, como se estivesse sendo carregada
+    const velocityX = (glide.live.x - prevX) / (dt / 16.7)
+    const targetTilt = dragRef.current?.moved
+      ? Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, velocityX * 0.9))
+      : 0
+    glide.tilt += (targetTilt - glide.tilt) * 0.25
+
+    el.style.bottom = 'auto'
+    el.style.left = `${glide.live.x}px`
+    el.style.top = `${glide.live.y}px`
+    liftRef.current?.style.setProperty(
+      '--mascot-tilt',
+      `${glide.tilt.toFixed(2)}deg`
+    )
+
+    const distance = Math.hypot(
+      glide.target.x - glide.live.x,
+      glide.target.y - glide.live.y
+    )
+    const settled =
+      !dragRef.current?.moved && distance < 0.5 && Math.abs(glide.tilt) < 0.1
+
+    if (settled) {
+      const finalPos = {
+        x: Math.round(glide.target.x),
+        y: Math.round(glide.target.y),
+      }
+      el.style.left = `${finalPos.x}px`
+      el.style.top = `${finalPos.y}px`
+      liftRef.current?.style.setProperty('--mascot-tilt', '0deg')
+      glideRef.current = null
+      setPosition(finalPos)
+      return
+    }
+
+    glide.frame = requestAnimationFrame(runGlideFrame)
+  }
+
+  const glideTo = (target: MascotPosition, from: MascotPosition) => {
+    if (glideRef.current) {
+      glideRef.current.target = target
+      return
+    }
+    glideRef.current = {
+      live: from,
+      target,
+      tilt: 0,
+      lastTime: performance.now(),
+      frame: requestAnimationFrame(runGlideFrame),
+    }
+    // Sai da posição padrão (definida por classes CSS) para left/top explícitos
+    if (!position) setPosition(from)
+  }
+
+  // "Falar com a Capivara" na navbar traz a mascote de volta se estiver minimizada
+  const [lastTalkRequest, setLastTalkRequest] = useState(talkRequest)
+  if (talkRequest !== lastTalkRequest) {
+    setLastTalkRequest(talkRequest)
+    if (isMinimized) setIsMinimized(false)
+  }
+
+  // Salva preferências quando não está no meio de um arraste
+  useEffect(() => {
+    if (isDragging) return
+    saveMascotPrefs({ minimized: isMinimized, position })
+  }, [isMinimized, position, isDragging])
+
+  // Mantém a capivara dentro da tela ao trocar de tamanho (minimizar/expandir)
+  useLayoutEffect(() => {
+    const el = asideRef.current
+    if (!el || !position) return
+    const rect = el.getBoundingClientRect()
+    const clamped = clampToViewport(position, rect.width, rect.height)
+    if (clamped.x !== position.x || clamped.y !== position.y) {
+      setPosition(clamped)
+    }
+  }, [isMinimized, position])
+
+  // ...e ao redimensionar a janela
+  useEffect(() => {
+    const handleResize = () => {
+      const el = asideRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      setPosition((current) =>
+        current ? clampToViewport(current, rect.width, rect.height) : current
+      )
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    const el = asideRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    suppressClickRef.current = false
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      originX: rect.left,
+      originY: rect.top,
+      width: rect.width,
+      height: rect.height,
+      moved: false,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    const dx = e.clientX - drag.startX
+    const dy = e.clientY - drag.startY
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return
+      drag.moved = true
+      setIsDragging(true)
+    }
+    glideTo(
+      clampToViewport(
+        { x: drag.originX + dx, y: drag.originY + dy },
+        drag.width,
+        drag.height
+      ),
+      { x: drag.originX, y: drag.originY }
+    )
+  }
+
+  const handlePointerEnd = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+    // Um arraste não deve contar como clique na capivara
+    if (drag.moved) suppressClickRef.current = true
+    dragRef.current = null
+    setIsDragging(false)
+  }
+
+  // Setas do teclado movem a capivara (Shift = passo maior)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    const deltas: Record<string, [number, number]> = {
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+    }
+    const delta = deltas[e.key]
+    const el = asideRef.current
+    if (!delta || !el) return
+    e.preventDefault()
+    const rect = el.getBoundingClientRect()
+    const step = e.shiftKey ? KEYBOARD_STEP_PX * 4 : KEYBOARD_STEP_PX
+    // Acumula sobre o alvo atual para teclas repetidas não "perderem" passos
+    const base = glideRef.current?.target ?? { x: rect.left, y: rect.top }
+    glideTo(
+      clampToViewport(
+        { x: base.x + delta[0] * step, y: base.y + delta[1] * step },
+        rect.width,
+        rect.height
+      ),
+      { x: rect.left, y: rect.top }
+    )
+  }
+
+  const consumeSuppressedClick = () => {
+    if (!suppressClickRef.current) return false
+    suppressClickRef.current = false
+    return true
+  }
+
+  const handleMinimize = () => {
+    setIsMinimized(true)
+    setIsHovered(false)
+  }
+
+  const handleExpand = () => {
+    if (consumeSuppressedClick()) return
+    setIsMinimized(false)
+    setDismissedEventKey(null)
+  }
+
+  // Durante o arraste o balão só fica transparente (some e volta com fade)
+  const isBubbleOpen = !isMinimized && dismissedEventKey !== currentEventKey
+
+  // Balão abre para o lado com mais espaço
+  const bubbleBelow = position !== null && position.y < BUBBLE_FLIP_TOP_PX
+  const bubbleAlignRight =
+    position !== null && position.x + 64 > window.innerWidth / 2
 
   const activeTipIndex =
     tipSelection &&
@@ -230,6 +530,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
   const configReaction = computeConfigReaction(state, config, video)
 
   const handleInteractMascot = () => {
+    if (consumeSuppressedClick()) return
     setDismissedEventKey(null)
     setIsPopping(true)
     setPetCount((prev) => prev + 1)
@@ -568,16 +869,89 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
     }
   }
 
+  const dragHandlers = {
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerEnd,
+    onPointerCancel: handlePointerEnd,
+    onKeyDown: handleKeyDown,
+  }
+
+  const asideClassName = `fixed z-[45] pointer-events-none select-none ${
+    position ? '' : 'left-1 bottom-[5.6rem] lg:left-12 lg:bottom-[6.5rem]'
+  }`
+  const asideStyle = position
+    ? { left: position.x, top: position.y }
+    : undefined
+
+  if (isMinimized) {
+    const ringPercent = Math.max(0, Math.min(100, progressPercent))
+    const ringTrack = isDark ? '#2D333B' : '#E5E7EB'
+    return (
+      <aside
+        ref={asideRef}
+        aria-label="Assistente mascote Capivara do SONORA (minimizada)"
+        className={asideClassName}
+        style={asideStyle}
+      >
+        <div
+          ref={liftRef}
+          className="pointer-events-auto relative rounded-full p-[3px] shadow-lg"
+          style={{
+            ...liftStyle(isDragging),
+            background:
+              state === 'converting'
+                ? `conic-gradient(#BCEE45 ${ringPercent}%, ${ringTrack} 0)`
+                : ringTrack,
+          }}
+        >
+          <button
+            type="button"
+            {...dragHandlers}
+            onClick={handleExpand}
+            title="Abrir a capivara (segure e arraste para mover)"
+            aria-label="Abrir mascote capivara. Use as setas para mover."
+            className={`relative flex items-center justify-center w-14 h-14 rounded-full overflow-hidden touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            } ${isDark ? 'bg-[#15171A]' : 'bg-white'}`}
+          >
+            <img
+              src={mascotImageSrc}
+              alt=""
+              className="w-[115%] h-[115%] max-w-none object-contain translate-y-1 select-none"
+              draggable={false}
+            />
+          </button>
+          <div className="absolute -bottom-1 -right-1 z-20 pointer-events-none scale-75 origin-bottom-right">
+            {renderMoodBadge()}
+          </div>
+        </div>
+      </aside>
+    )
+  }
+
   return (
     <aside
+      ref={asideRef}
       aria-live="polite"
       aria-label="Assistente mascote Capivara do SONORA"
-      className="fixed left-1 bottom-[5.6rem] lg:left-12 lg:bottom-[6.5rem] z-[45] flex flex-col items-start pointer-events-none select-none"
+      className={asideClassName}
+      style={asideStyle}
     >
       {/* Floating Speech Bubble */}
       {isBubbleOpen && (
         <div
-          className={`pointer-events-auto relative mb-2 w-[280px] sm:w-[320px] rounded-2xl border p-3.5 sm:p-4 shadow-xl transition-all duration-300 ${
+          className={`mascot-bubble-in absolute ${
+            bubbleBelow
+              ? 'top-full mt-3 origin-top'
+              : 'bottom-full mb-2 origin-bottom'
+          } ${
+            bubbleAlignRight ? 'right-0' : 'left-0'
+          } ${
+            isDragging
+              ? 'pointer-events-none opacity-0 scale-95'
+              : 'pointer-events-auto opacity-100 scale-100'
+          } w-[280px] sm:w-[320px] rounded-2xl border p-3.5 sm:p-4 shadow-xl transition-[opacity,scale] duration-200 ease-out ${
             mood === 'dragging'
               ? isDark
                 ? 'border-[#BCEE45] bg-[#181E14]/95 text-[#F3F4F6] backdrop-blur-md'
@@ -625,19 +999,34 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setDismissedEventKey(currentEventKey)}
-              title="Minimizar balão de fala"
-              aria-label="Minimizar balão de fala do mascote"
-              className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                isDark
-                  ? 'text-[#9CA3AF] hover:text-white hover:bg-[#24282E]'
-                  : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
-              }`}
-            >
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => setDismissedEventKey(currentEventKey)}
+                title="Fechar balão de fala"
+                aria-label="Fechar balão de fala do mascote"
+                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                  isDark
+                    ? 'text-[#9CA3AF] hover:text-white hover:bg-[#24282E]'
+                    : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
+                }`}
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleMinimize}
+                title="Minimizar capivara (ela para de falar)"
+                aria-label="Minimizar mascote capivara"
+                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                  isDark
+                    ? 'text-[#9CA3AF] hover:text-white hover:bg-[#24282E]'
+                    : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
+                }`}
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Dialogue Title & Description */}
@@ -695,18 +1084,23 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             </button>
 
             <span
-              className={`text-[10px] ${
+              className={`inline-flex items-center gap-1 text-[10px] ${
                 isDark ? 'text-[#6B7280]' : 'text-[#9CA3AF]'
               }`}
             >
-              Clique na capivara ♥
+              <Move className="w-3 h-3" />
+              Arraste para mover
             </span>
           </div>
 
           {/* Speech Bubble Pointer Tail */}
           <div
             aria-hidden="true"
-            className={`absolute -bottom-2 left-10 h-3.5 w-3.5 rotate-45 border-r border-b ${
+            className={`absolute h-3.5 w-3.5 rotate-45 ${
+              bubbleBelow
+                ? '-top-2 border-l border-t'
+                : '-bottom-2 border-r border-b'
+            } ${bubbleAlignRight ? 'right-10' : 'left-10'} ${
               mood === 'dragging'
                 ? isDark
                   ? 'border-[#BCEE45] bg-[#181E14]'
@@ -723,8 +1117,12 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
         </div>
       )}
 
-      {/* Interactive Capybara Character in the Bottom-Right Corner */}
-      <div className="relative pointer-events-auto">
+      {/* Interactive Capybara Character (arrastável) */}
+      <div
+        ref={liftRef}
+        style={liftStyle(isDragging)}
+        className="group/mascot relative pointer-events-auto"
+      >
         {/* Floating Musical Notes / Hearts around the Mascot */}
         {showMusicalNotes && (
           <div
@@ -760,12 +1158,17 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
 
         <button
           type="button"
+          {...dragHandlers}
           onClick={handleInteractMascot}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          title="Clique na capivara para interagir, trocar de pose e ver dicas de estúdio!"
-          aria-label="Interagir com o mascote capivara do SONORA"
-          className={`group relative flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 lg:w-32 lg:h-32 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-full ${animationClass}`}
+          title="Clique para dicas e poses, ou segure e arraste para mover"
+          aria-label="Interagir com o mascote capivara do SONORA. Use as setas para mover."
+          className={`group relative flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 lg:w-32 lg:h-32 touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-full ${animationClass} ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+          // Pausa (sem remover) a animação para não dar "pulo" ao pegar
+          style={{ animationPlayState: isDragging ? 'paused' : 'running' }}
         >
           <img
             key={mascotImageSrc}
@@ -796,6 +1199,23 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             </div>
           )}
         </button>
+
+        {/* Minimizar (aparece ao passar o mouse; sempre visível em telas de toque) */}
+        {!isDragging && (
+          <button
+            type="button"
+            onClick={handleMinimize}
+            title="Minimizar capivara (ela para de falar)"
+            aria-label="Minimizar mascote capivara"
+            className={`absolute top-0 right-0 z-30 inline-flex p-1 rounded-full border shadow-md cursor-pointer transition-opacity opacity-0 group-hover/mascot:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+              isDark
+                ? 'bg-[#15171A] border-[#2D333B] text-[#F3F4F6] hover:text-[#BCEE45]'
+                : 'bg-white border-[#E5E7EB] text-[#111315] hover:text-[#4D7C0F]'
+            }`}
+          >
+            <Minus className="w-3 h-3 stroke-[2.5]" />
+          </button>
+        )}
 
         {/* Corner Mood Badge */}
         <div className="absolute bottom-1 right-1 z-20 pointer-events-none">

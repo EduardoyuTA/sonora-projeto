@@ -111,3 +111,14 @@ export type MascotMood =
   | 'grooving'
   | 'error'
   | 'petted'
+
+export interface MascotPosition {
+  x: number
+  y: number
+}
+
+export interface MascotPrefs {
+  minimized: boolean
+  // null = posição padrão (canto inferior esquerdo)
+  position: MascotPosition | null
+}
