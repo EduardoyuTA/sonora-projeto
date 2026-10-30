@@ -78,7 +78,7 @@ function sonoraFfmpegPlugin(): Plugin {
           args.push('-i', inputPath)
 
           if (!isNaN(endTime) && endTime > 0 && endTime > startTime) {
-            args.push('-to', (endTime - (startTime > 0 ? startTime : 0)).toFixed(3))
+            args.push('-t', (endTime - Math.max(0, startTime)).toFixed(3))
           }
 
           args.push('-vn') // Strip video stream
@@ -122,7 +122,7 @@ function sonoraFfmpegPlugin(): Plugin {
             stderrLog += chunk.toString()
           })
 
-          req.on('close', () => {
+          res.on('close', () => {
             if (!res.writableEnded) {
               ff.kill('SIGKILL')
             }

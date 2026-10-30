@@ -8,6 +8,10 @@ import type {
 } from '../types/sonora'
 import {
   ACCEPTED_VIDEO_EXTENSIONS,
+  MAX_BROWSER_DURATION_LABEL,
+  MAX_BROWSER_DURATION_SECONDS,
+  MAX_BROWSER_FILE_SIZE_BYTES,
+  MAX_BROWSER_FILE_SIZE_LABEL,
   MAX_FILE_SIZE_BYTES,
   MAX_FILE_SIZE_LABEL,
   getExtension,
@@ -572,6 +576,8 @@ async function convertViaNativeFfmpeg(
       } else if (
         xhr.status === 404 ||
         xhr.status === 405 ||
+        xhr.status === 408 ||
+        xhr.status === 429 ||
         xhr.status >= 500 ||
         (xhr.response instanceof Blob && xhr.response.type.includes('text/html'))
       ) {
@@ -608,6 +614,24 @@ async function convertViaBrowserEngine(
   signal: AbortSignal,
   onProgress: (update: ConversionProgressUpdate) => void
 ): Promise<{ blob: Blob; peaks: number[]; duration: number }> {
+  if (config.format !== 'mp3' && config.format !== 'wav') {
+    throw new Error(
+      `O formato ${config.format.toUpperCase()} requer o motor FFmpeg. Selecione MP3 ou WAV para converter diretamente no navegador.`
+    )
+  }
+
+  if (video.size > MAX_BROWSER_FILE_SIZE_BYTES) {
+    throw new Error(
+      `A conversão no navegador aceita arquivos de até ${MAX_BROWSER_FILE_SIZE_LABEL} para evitar falta de memória. Ative o modo híbrido com FFmpeg ou escolha um vídeo menor.`
+    )
+  }
+
+  if (video.duration > MAX_BROWSER_DURATION_SECONDS) {
+    throw new Error(
+      `A conversão no navegador aceita vídeos de até ${MAX_BROWSER_DURATION_LABEL} para evitar falta de memória. Ative o modo híbrido com FFmpeg ou escolha um vídeo mais curto.`
+    )
+  }
+
   onProgress({ percent: 10, stage: 'Preparando seu arquivo...' })
 
   const arrayBuffer = await video.file.arrayBuffer()
@@ -700,8 +724,20 @@ export async function convertVideoToAudio(
       if ((err as Error)?.name === 'AbortError') {
         throw err
       }
+      const engineUnavailable =
+        (err as Error)?.message === 'NETWORK_OR_ENGINE_UNAVAILABLE'
+      // M4A/AAC need FFmpeg: the browser engine can only produce MP3/WAV
+      if (
+        engineUnavailable &&
+        config.format !== 'mp3' &&
+        config.format !== 'wav'
+      ) {
+        throw new Error(
+          'O motor FFmpeg está indisponível no momento. Selecione MP3 ou WAV para usar a conversão local no navegador.'
+        )
+      }
       // If server endpoint wasn't reachable, fall back to browser engine
-      if ((err as Error)?.message === 'NETWORK_OR_ENGINE_UNAVAILABLE') {
+      if (engineUnavailable) {
         const browserRes = await convertViaBrowserEngine(
           video,
           config,

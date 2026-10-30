@@ -173,7 +173,7 @@ const server = http.createServer((req, res) => {
       args.push('-i', inputPath)
 
       if (!Number.isNaN(endTime) && endTime > 0 && endTime > startTime) {
-        args.push('-to', (endTime - (startTime > 0 ? startTime : 0)).toFixed(3))
+        args.push('-t', (endTime - Math.max(0, startTime)).toFixed(3))
       }
 
       args.push('-vn')
@@ -216,7 +216,7 @@ const server = http.createServer((req, res) => {
         stderrLog += chunk.toString()
       })
 
-      req.on('close', () => {
+      res.on('close', () => {
         if (!res.writableEnded) {
           ff.kill('SIGKILL')
         }

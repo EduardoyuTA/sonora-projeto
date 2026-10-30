@@ -2,6 +2,10 @@ import type { AudioFormat, BitrateKbps, QualityTier } from '../types/sonora'
 
 export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024 // 500 MB
 export const MAX_FILE_SIZE_LABEL = '500 MB'
+export const MAX_BROWSER_FILE_SIZE_BYTES = 150 * 1024 * 1024 // 150 MB
+export const MAX_BROWSER_FILE_SIZE_LABEL = '150 MB'
+export const MAX_BROWSER_DURATION_SECONDS = 30 * 60 // 30 minutes
+export const MAX_BROWSER_DURATION_LABEL = '30 minutos'
 
 export const ACCEPTED_VIDEO_EXTENSIONS = [
   '.mp4',

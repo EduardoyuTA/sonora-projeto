@@ -111,7 +111,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     <input
       ref={fileInputRef}
       type="file"
-      accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v"
+      accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v,.ogv,.3gp"
       onChange={handleFileChange}
       className="sr-only"
       aria-label="Selecionar arquivo de vídeo do dispositivo"
