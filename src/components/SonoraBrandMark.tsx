@@ -1,4 +1,5 @@
 import React from 'react'
+import { AudioWaveform } from 'lucide-react'
 
 interface SonoraBrandMarkProps {
   size?: 'sm' | 'md' | 'lg'
@@ -39,29 +40,19 @@ export const SonoraBrandMark: React.FC<SonoraBrandMarkProps> = React.memo(
         } ${className}`}
       >
         <div
-          className={`${avatarSize} overflow-hidden border-2 border-[#B8F238] bg-white shrink-0 shadow-[0_0_16px_rgba(184,242,56,0.22)]`}
+          className={`${avatarSize} shrink-0 flex items-center justify-center bg-[#C5F04A] text-[#0A0C0B]`}
         >
-          <img
-            src="/mascote.png"
-            alt="Logotipo Capivara SONORA"
-            className="h-full w-full object-cover object-[50%_20%]"
-            draggable={false}
-          />
+          <AudioWaveform className="w-1/2 h-1/2" strokeWidth={2.4} aria-hidden="true" />
         </div>
 
         <div className="flex flex-col items-start text-left">
-          <div className="flex items-center gap-2">
-            <span
-              className={`font-bold tracking-tight leading-none text-[#F7F8F8] ${titleSize}`}
-            >
-              SONORA
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.14em] px-2 py-0.5 rounded-md font-semibold bg-[#1B2616] text-[#B8F238] border border-[#B8F238]/35">
-              STUDIO
-            </span>
-          </div>
-          <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#9CA5B2] leading-tight mt-1">
-            VÍDEO PARA ÁUDIO
+          <span
+            className={`font-display font-bold leading-none tracking-[0.04em] text-[#F2F4F0] ${titleSize}`}
+          >
+            SONORA
+          </span>
+          <span className="text-xs text-[#A3AAA5] leading-tight mt-1">
+            Vídeo para áudio
           </span>
         </div>
       </div>

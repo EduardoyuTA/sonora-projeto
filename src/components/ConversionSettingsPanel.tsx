@@ -174,12 +174,12 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
       aria-label="Configurações de conversão de áudio"
       className={`rounded-3xl border p-6 sm:p-8 transition-all ${
         isDark
-          ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+          ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
           : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
       }`}
     >
       {/* Header with Estimated Size Pill */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 mb-6 border-b border-[#E5E7EB] dark:border-[#24282E]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 mb-6 border-b border-[#E5E7EB] dark:border-[#1F2421]">
         <div>
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Sliders className="w-5 h-5 text-[#4D7C0F] dark:text-[#BCEE45]" />
@@ -187,7 +187,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           </h3>
           <p
             className={`text-xs sm:text-sm mt-0.5 ${
-              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
             }`}
           >
             Escolha o formato ideal. A conversão preserva a clareza original sem prometer ganhos artificiais.
@@ -197,7 +197,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
         <div
           className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-mono border shrink-0 ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6]'
+              ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6]'
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315]'
           }`}
           title="Cálculo estimado com base na duração do trecho selecionado e na taxa de bits escolhida."
@@ -210,7 +210,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
 
       {/* 1. Format Selection Grid */}
       <div className="mb-6">
-        <label className="block text-xs font-mono uppercase tracking-wider mb-3 text-[#525866] dark:text-[#9CA3AF]">
+        <label className="block text-xs font-mono uppercase tracking-wider mb-3 text-[#525866] dark:text-[#A3AAA5]">
           Formato de Áudio
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -231,7 +231,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                         ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white shadow-xs'
                         : 'bg-[#ECFCCB]/60 border-[#65A30D] text-[#111315] shadow-xs'
                       : isDark
-                        ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:border-[#3E4552]'
+                        ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:border-[#3E4552]'
                         : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:border-[#CBD5E1]'
                 }`}
               >
@@ -242,7 +242,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                       active
                         ? 'bg-[#BCEE45] text-[#111315] font-semibold'
                         : isDark
-                          ? 'bg-[#24282E] text-[#9CA3AF]'
+                          ? 'bg-[#1F2421] text-[#A3AAA5]'
                           : 'bg-[#E5E7EB] text-[#525866]'
                     }`}
                   >
@@ -251,7 +251,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 </div>
                 <p
                   className={`text-xs leading-snug ${
-                    isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                    isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                   }`}
                 >
                   {fmt.description}
@@ -266,12 +266,12 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
       {config.format !== 'wav' ? (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
+            <label className="text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#A3AAA5]">
               Qualidade do Áudio
             </label>
             <span
               className={`text-xs flex items-center gap-1 ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
               title="Taxas maiores preservam mais detalhes da faixa original do vídeo, mas não aumentam a qualidade além da fonte original."
             >
@@ -294,14 +294,14 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                         ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white'
                         : 'bg-[#ECFCCB]/60 border-[#65A30D] text-[#111315]'
                       : isDark
-                        ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:border-[#3E4552]'
+                        ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:border-[#3E4552]'
                         : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:border-[#CBD5E1]'
                   }`}
                 >
                   <div className="font-semibold text-sm">{tier.label}</div>
                   <div
                     className={`text-xs font-mono mt-0.5 ${
-                      isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                      isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                     }`}
                   >
                     {tier.sub}
@@ -314,7 +314,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           {/* Specific kbps selector when Personalizada or MP3 is active */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2">
             <span
-              className={`text-xs ${isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'}`}
+              className={`text-xs ${isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'}`}
             >
               Taxa de bits (Bitrate):
             </span>
@@ -330,7 +330,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                       active
                         ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315] font-bold'
                         : isDark
-                          ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                          ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5] hover:text-white'
                           : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
                     }`}
                   >
@@ -345,7 +345,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
         <div
           className={`mb-6 p-4 rounded-2xl border flex items-start gap-3 text-xs sm:text-sm ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF]'
+              ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
           }`}
         >
@@ -367,7 +367,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           aria-expanded={showAdvanced}
           className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border text-sm font-medium transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:bg-[#24282E]'
+              ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:bg-[#1F2421]'
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
           }`}
         >
@@ -376,7 +376,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
             <span>Configurações avançadas</span>
             <span
               className={`text-xs font-normal ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
             >
               (Nome do arquivo, cortar trecho, volume e normalização)
@@ -393,7 +393,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
           <div
             className={`mt-3 p-5 rounded-2xl border space-y-5 ${
               isDark
-                ? 'bg-[#111316] border-[#24282E]'
+                ? 'bg-[#111316] border-[#1F2421]'
                 : 'bg-[#F9FAFB]/70 border-[#E5E7EB]'
             }`}
           >
@@ -401,7 +401,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
             <div>
               <label
                 htmlFor="sonora-custom-filename"
-                className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]"
+                className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]"
               >
                 Nome do arquivo final
               </label>
@@ -416,14 +416,14 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                   placeholder={video.baseName}
                   className={`flex-1 px-3.5 py-2.5 rounded-l-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#A3E635] ${
                     isDark
-                      ? 'bg-[#1C1F24] border-[#2D323B] text-white'
+                      ? 'bg-[#161A18] border-[#2A302C] text-white'
                       : 'bg-white border-[#E5E7EB] text-[#111315]'
                   }`}
                 />
                 <span
                   className={`px-3.5 py-2.5 rounded-r-xl border border-l-0 text-sm font-mono font-semibold ${
                     isDark
-                      ? 'bg-[#24282E] border-[#2D323B] text-[#BCEE45]'
+                      ? 'bg-[#1F2421] border-[#2A302C] text-[#BCEE45]'
                       : 'bg-[#F1F3F5] border-[#E5E7EB] text-[#525866]'
                   }`}
                 >
@@ -435,7 +435,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
             {/* Audio Trim / Cut Start & End */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <label className="text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
+                <label className="text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#A3AAA5]">
                   Recortar trecho do vídeo
                 </label>
                 <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#BCEE45]/20 text-[#4D7C0F] dark:text-[#BCEE45] font-semibold">
@@ -448,7 +448,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 <div
                   className={`p-3.5 rounded-xl border ${
                     isDark
-                      ? 'bg-[#1C1F24] border-[#2D323B]'
+                      ? 'bg-[#161A18] border-[#2A302C]'
                       : 'bg-white border-[#E5E7EB]'
                   }`}
                 >
@@ -473,7 +473,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 <div
                   className={`p-3.5 rounded-xl border ${
                     isDark
-                      ? 'bg-[#1C1F24] border-[#2D323B]'
+                      ? 'bg-[#161A18] border-[#2A302C]'
                       : 'bg-white border-[#E5E7EB]'
                   }`}
                 >
@@ -502,7 +502,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
               <div
                 className={`p-3.5 rounded-xl border ${
                   isDark
-                    ? 'bg-[#1C1F24] border-[#2D323B]'
+                    ? 'bg-[#161A18] border-[#2A302C]'
                     : 'bg-white border-[#E5E7EB]'
                 }`}
               >
@@ -531,7 +531,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                   aria-label="Volume de saída em porcentagem"
                   className="w-full h-2 rounded-lg bg-gray-200 dark:bg-gray-700 disabled:opacity-40"
                 />
-                <div className="flex justify-between text-[10px] font-mono text-[#525866] dark:text-[#9CA3AF] mt-1">
+                <div className="flex justify-between text-[10px] font-mono text-[#525866] dark:text-[#A3AAA5] mt-1">
                   <span>20%</span>
                   <span>100% (Padrão)</span>
                   <span>200% (Boost)</span>
@@ -542,7 +542,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 <label
                   className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
                     isDark
-                      ? 'bg-[#1C1F24] border-[#2D323B] hover:bg-[#24282E]'
+                      ? 'bg-[#161A18] border-[#2A302C] hover:bg-[#1F2421]'
                       : 'bg-white border-[#E5E7EB] hover:bg-[#F3F4F6]'
                   }`}
                 >
@@ -552,7 +552,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                     </div>
                     <div
                       className={`text-[11px] ${
-                        isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                        isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                       }`}
                     >
                       Equilibra picos baixos e altos (-16 LUFS)
@@ -575,7 +575,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                 <label
                   className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
                     isDark
-                      ? 'bg-[#1C1F24] border-[#2D323B] hover:bg-[#24282E]'
+                      ? 'bg-[#161A18] border-[#2A302C] hover:bg-[#1F2421]'
                       : 'bg-white border-[#E5E7EB] hover:bg-[#F3F4F6]'
                   }`}
                 >
@@ -585,7 +585,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
                     </div>
                     <div
                       className={`text-[11px] ${
-                        isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                        isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                       }`}
                     >
                       Ignora filtros de ganho e mantém o sinal puro
@@ -612,7 +612,7 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
       {/* Primary Action: Convert Now */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
         <div
-          className={`text-xs ${isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'}`}
+          className={`text-xs ${isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'}`}
         >
           Saída final:{' '}
           <strong className={`font-mono ${isDark ? 'text-white' : 'text-[#111315]'}`}>

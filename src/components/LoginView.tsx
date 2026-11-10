@@ -121,7 +121,7 @@ const LoginBackdrop: React.FC<{ prefersReducedMotion: boolean }> = React.memo(
         {/* Leve sombra só onde há texto (canto inferior esquerdo) */}
         <div className="hidden lg:block absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_0%_100%,rgba(6,9,10,0.85),transparent_70%)]" />
         {/* Brilho lima atrás do cartão */}
-        <div className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#B8F238]/10 blur-[120px]" />
+        <div className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#C5F04A]/10 blur-[120px]" />
       </div>
     )
   }
@@ -161,7 +161,7 @@ const LoginMascot: React.FC<{ pose: string; message: string; isError: boolean }>
   isError,
 }) => (
   <div className="flex items-center gap-3 mb-4">
-    <span className="relative shrink-0 flex items-center justify-center w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-[radial-gradient(circle_at_50%_40%,rgba(198,255,74,0.45),rgba(184,242,56,0.12)_60%,transparent_72%)]">
+    <span className="relative shrink-0 flex items-center justify-center w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-[radial-gradient(circle_at_50%_40%,rgba(198,255,74,0.45),rgba(197,240,74,0.12)_60%,transparent_72%)]">
       <img
         key={pose}
         src={pose}
@@ -233,7 +233,7 @@ const TextField: React.FC<TextFieldProps> = ({
         className={`group flex items-center h-12 sm:h-[50px] rounded-2xl bg-(--lg-field) border px-4 transition-all duration-200 ${
           error
             ? 'border-red-500/80 focus-within:ring-2 focus-within:ring-red-500/25'
-            : 'border-(--lg-field-border) hover:border-(--lg-field-border-hover) focus-within:border-[#B8F238] focus-within:ring-2 focus-within:ring-[#B8F238]/25'
+            : 'border-(--lg-field-border) hover:border-(--lg-field-border-hover) focus-within:border-[#C5F04A] focus-within:ring-2 focus-within:ring-[#C5F04A]/25'
         }`}
       >
         <Icon
@@ -277,7 +277,7 @@ function passwordScore(password: string): number {
 }
 
 const STRENGTH_LABELS = ['Muito fraca', 'Fraca', 'Média', 'Boa', 'Forte']
-const STRENGTH_COLORS = ['#EF4444', '#EF4444', '#F59E0B', '#84CC16', '#B8F238']
+const STRENGTH_COLORS = ['#EF4444', '#EF4444', '#F59E0B', '#84CC16', '#C5F04A']
 
 const PasswordStrength: React.FC<{ password: string }> = ({ password }) => {
   if (!password) return null
@@ -629,7 +629,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
       disabled={isBusy}
       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
       aria-pressed={showPassword}
-      className="ml-2 p-1.5 rounded-xl text-(--lg-muted) hover:text-(--lg-text) focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8F238] transition-colors cursor-pointer"
+      className="ml-2 p-1.5 rounded-xl text-(--lg-muted) hover:text-(--lg-text) focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5F04A] transition-colors cursor-pointer"
     >
       {showPassword ? (
         <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -640,11 +640,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
   )
 
   const linkButtonClass =
-    'font-semibold text-(--lg-accent-text) hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8F238] rounded-md px-1 py-0.5 cursor-pointer disabled:opacity-60'
+    'font-semibold text-(--lg-accent-text) hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5F04A] rounded-md px-1 py-0.5 cursor-pointer disabled:opacity-60'
   const primaryButtonClass =
-    'w-full h-12 sm:h-[50px] rounded-2xl bg-[#B8F238] hover:bg-[#c3f64e] active:scale-[0.99] disabled:opacity-65 disabled:cursor-not-allowed text-[#090B0C] font-bold text-[15px] sm:text-base flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(184,242,56,0.22)] hover:shadow-[0_0_28px_rgba(184,242,56,0.42)] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--lg-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--lg-card)'
+    'w-full h-12 sm:h-[50px] rounded-xl bg-[#C5F04A] hover:bg-[#D4F86A] active:scale-[0.99] disabled:opacity-65 disabled:cursor-not-allowed text-[#0A0C0B] font-semibold text-[15px] sm:text-base flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--lg-text) focus-visible:ring-offset-2 focus-visible:ring-offset-(--lg-card)'
   const secondaryButtonClass =
-    'w-full h-12 rounded-2xl bg-(--lg-field) border border-(--lg-field-border) hover:border-(--lg-field-border-hover) active:scale-[0.99] text-(--lg-text) text-sm font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8F238] disabled:opacity-60 disabled:cursor-not-allowed'
+    'w-full h-12 rounded-2xl bg-(--lg-field) border border-(--lg-field-border) hover:border-(--lg-field-border-hover) active:scale-[0.99] text-(--lg-text) text-sm font-semibold flex items-center justify-center gap-2.5 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5F04A] disabled:opacity-60 disabled:cursor-not-allowed'
 
   const submitLabel: Record<LoginMode, { idle: string; busy: string; icon: React.ElementType }> = {
     login: { idle: 'Entrar', busy: 'Entrando…', icon: LogIn },
@@ -656,7 +656,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   const renderEmailSent = () => (
     <div className="login-fade-in text-center">
-      <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#B8F238]/15 text-(--lg-accent-text)">
+      <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#C5F04A]/15 text-(--lg-accent-text)">
         <MailCheck className="w-7 h-7" aria-hidden="true" />
       </span>
       <h1 className="text-2xl font-bold tracking-tight text-(--lg-text)">
@@ -783,7 +783,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   disabled={isBusy}
                   className="peer sr-only"
                 />
-                <span className="w-[18px] h-[18px] rounded-[5px] border border-(--lg-field-border) bg-(--lg-field) peer-checked:bg-[#B8F238] peer-checked:border-[#B8F238] peer-focus-visible:ring-2 peer-focus-visible:ring-[#B8F238] transition-all flex items-center justify-center">
+                <span className="w-[18px] h-[18px] rounded-[5px] border border-(--lg-field-border) bg-(--lg-field) peer-checked:bg-[#C5F04A] peer-checked:border-[#C5F04A] peer-focus-visible:ring-2 peer-focus-visible:ring-[#C5F04A] transition-all flex items-center justify-center">
                   <Check
                     aria-hidden="true"
                     className={`w-3 h-3 text-[#090B0C] stroke-[3] transition-opacity ${
@@ -916,7 +916,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   return (
     <div
-      className={`login-theme-${isDark ? 'dark' : 'light'} relative min-h-screen w-full text-(--lg-text) overflow-x-hidden selection:bg-[#B8F238] selection:text-[#090B0C]`}
+      className={`login-theme-${isDark ? 'dark' : 'light'} relative min-h-screen w-full text-(--lg-text) overflow-x-hidden selection:bg-[#C5F04A] selection:text-[#090B0C]`}
     >
       <LoginBackdrop prefersReducedMotion={prefersReducedMotion} />
 
@@ -932,7 +932,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
         <section
           aria-labelledby="sonora-login-heading"
-          className="login-card relative w-full max-w-[460px] mx-auto lg:mx-0 shrink-0 rounded-[30px] border border-(--lg-card-border) bg-(--lg-card) backdrop-blur-2xl px-6 py-6 sm:px-8 sm:py-7 transition-colors duration-300"
+          className="login-card relative w-full max-w-[460px] mx-auto lg:mx-0 shrink-0 rounded-3xl border border-(--lg-card-border) bg-(--lg-card) backdrop-blur-xl px-6 py-6 sm:px-8 sm:py-7 transition-colors duration-300"
           style={{ boxShadow: 'var(--lg-shadow)' }}
         >
           <button
@@ -940,7 +940,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             onClick={onToggleTheme}
             aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
             title={isDark ? 'Tema claro' : 'Tema escuro'}
-            className="absolute top-5 right-5 z-10 h-10 w-10 rounded-full border border-(--lg-field-border) bg-(--lg-field) text-(--lg-accent-text) flex items-center justify-center cursor-pointer hover:scale-105 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8F238]"
+            className="absolute top-5 right-5 z-10 h-10 w-10 rounded-full border border-(--lg-field-border) bg-(--lg-field) text-(--lg-accent-text) flex items-center justify-center cursor-pointer hover:scale-105 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C5F04A]"
           >
             {isDark ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
           </button>

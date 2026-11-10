@@ -878,7 +878,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
   }
 
   const asideClassName = `fixed z-[45] pointer-events-none select-none ${
-    position ? '' : 'left-1 bottom-[5.6rem] lg:left-12 lg:bottom-[6.5rem]'
+    position ? '' : 'left-1 bottom-[5.6rem] lg:left-6 lg:bottom-[7rem]'
   }`
   const asideStyle = position
     ? { left: position.x, top: position.y }
@@ -886,7 +886,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
 
   if (isMinimized) {
     const ringPercent = Math.max(0, Math.min(100, progressPercent))
-    const ringTrack = isDark ? '#2D333B' : '#E5E7EB'
+    const ringTrack = isDark ? '#2A302C' : '#E5E7EB'
     return (
       <aside
         ref={asideRef}
@@ -913,7 +913,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             aria-label="Abrir mascote capivara. Use as setas para mover."
             className={`relative flex items-center justify-center w-14 h-14 rounded-full overflow-hidden touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
               isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            } ${isDark ? 'bg-[#15171A]' : 'bg-white'}`}
+            } ${isDark ? 'bg-[#121513]' : 'bg-white'}`}
           >
             <img
               src={mascotImageSrc}
@@ -951,7 +951,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             isDragging
               ? 'pointer-events-none opacity-0 scale-95'
               : 'pointer-events-auto opacity-100 scale-100'
-          } w-[280px] sm:w-[320px] rounded-2xl border p-3.5 sm:p-4 shadow-xl transition-[opacity,scale] duration-200 ease-out ${
+          } w-[280px] sm:w-[320px] lg:w-[216px] rounded-2xl border p-3.5 sm:p-4 shadow-xl transition-[opacity,scale] duration-200 ease-out ${
             mood === 'dragging'
               ? isDark
                 ? 'border-[#BCEE45] bg-[#181E14]/95 text-[#F3F4F6] backdrop-blur-md'
@@ -961,7 +961,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
                   ? 'border-red-800/80 bg-[#1A1315]/95 text-[#F3F4F6] backdrop-blur-md'
                   : 'border-red-300 bg-red-50/95 text-[#111315] backdrop-blur-md'
                 : isDark
-                  ? 'border-[#2D333B] bg-[#15171A]/95 text-[#F3F4F6] backdrop-blur-md'
+                  ? 'border-[#2A302C] bg-[#121513]/95 text-[#F3F4F6] backdrop-blur-md'
                   : 'border-[#E5E7EB] bg-white/95 text-[#111315] backdrop-blur-md'
           }`}
         >
@@ -988,7 +988,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
                     isDark
-                      ? 'bg-[#1F242B] text-[#9CA3AF]'
+                      ? 'bg-[#1F242B] text-[#A3AAA5]'
                       : 'bg-[#F1F3F5] text-[#525866]'
                   }`}
                   title="Vezes que você interagiu com a Capivara"
@@ -1007,7 +1007,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
                 aria-label="Fechar balão de fala do mascote"
                 className={`p-1 rounded-lg transition-colors cursor-pointer ${
                   isDark
-                    ? 'text-[#9CA3AF] hover:text-white hover:bg-[#24282E]'
+                    ? 'text-[#A3AAA5] hover:text-white hover:bg-[#1F2421]'
                     : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
                 }`}
               >
@@ -1020,7 +1020,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
                 aria-label="Minimizar mascote capivara"
                 className={`p-1 rounded-lg transition-colors cursor-pointer ${
                   isDark
-                    ? 'text-[#9CA3AF] hover:text-white hover:bg-[#24282E]'
+                    ? 'text-[#A3AAA5] hover:text-white hover:bg-[#1F2421]'
                     : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
                 }`}
               >
@@ -1035,7 +1035,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
           </h2>
           <p
             className={`mt-1 text-[11px] sm:text-xs leading-relaxed ${
-              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
             }`}
           >
             {dialogue.description}
@@ -1046,7 +1046,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             <div className="mt-2.5">
               <div
                 className={`h-1.5 w-full overflow-hidden rounded-full ${
-                  isDark ? 'bg-[#24282E]' : 'bg-[#E5E7EB]'
+                  isDark ? 'bg-[#1F2421]' : 'bg-[#E5E7EB]'
                 }`}
               >
                 <div
@@ -1066,7 +1066,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
               onClick={handleInteractMascot}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
                 isDark
-                  ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:border-[#BCEE45]/60 hover:text-[#BCEE45]'
+                  ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:border-[#BCEE45]/60 hover:text-[#BCEE45]'
                   : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:border-[#65A30D] hover:bg-[#ECFCCB]/40'
               }`}
             >
@@ -1085,7 +1085,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
 
             <span
               className={`inline-flex items-center gap-1 text-[10px] ${
-                isDark ? 'text-[#6B7280]' : 'text-[#9CA3AF]'
+                isDark ? 'text-[#6B7280]' : 'text-[#A3AAA5]'
               }`}
             >
               <Move className="w-3 h-3" />
@@ -1110,7 +1110,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
                     ? 'border-red-800/80 bg-[#1A1315]'
                     : 'border-red-300 bg-red-50'
                   : isDark
-                    ? 'border-[#2D333B] bg-[#15171A]'
+                    ? 'border-[#2A302C] bg-[#121513]'
                     : 'border-[#E5E7EB] bg-white'
             }`}
           />
@@ -1209,7 +1209,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
             aria-label="Minimizar mascote capivara"
             className={`absolute top-0 right-0 z-30 inline-flex p-1 rounded-full border shadow-md cursor-pointer transition-opacity opacity-0 group-hover/mascot:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
               isDark
-                ? 'bg-[#15171A] border-[#2D333B] text-[#F3F4F6] hover:text-[#BCEE45]'
+                ? 'bg-[#121513] border-[#2A302C] text-[#F3F4F6] hover:text-[#BCEE45]'
                 : 'bg-white border-[#E5E7EB] text-[#111315] hover:text-[#4D7C0F]'
             }`}
           >

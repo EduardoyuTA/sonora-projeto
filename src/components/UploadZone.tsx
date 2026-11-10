@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react'
 import {
   AlertCircle,
-  ChevronRight,
-  Database,
-  FileVideo,
+  Lock,
   MessageCircle,
+  Music,
+  Plus,
+  Scissors,
   AudioWaveform,
   CheckCircle2,
   FolderOpen,
@@ -22,7 +23,6 @@ import {
   formatBytes,
   formatDuration,
 } from '../utils/formatters'
-import { HeroArt } from './HeroArt'
 
 interface UploadZoneProps {
   state: ConversionState
@@ -135,7 +135,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         <h2 className="text-lg font-semibold mb-1">
           Preparando seu vídeo...
         </h2>
-        <p className={`text-sm ${isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'}`}>
+        <p className={`text-sm ${isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'}`}>
           Conferindo formato, duração e se há uma trilha de áudio. Leva só alguns segundos.
         </p>
       </div>
@@ -167,7 +167,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </h2>
             <p
               className={`text-sm mb-5 ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
             >
               Certifique-se de que o vídeo possui faixa de áudio válida, está abaixo de{' '}
@@ -188,7 +188,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                   onClick={onRetry}
                   className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border transition-colors cursor-pointer ${
                     isDark
-                      ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6] hover:bg-[#1F242B]'
+                      ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6] hover:bg-[#1F242B]'
                       : 'bg-white border-[#E5E7EB] text-[#111315] hover:bg-[#F3F4F6]'
                   }`}
                 >
@@ -201,7 +201,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                 onClick={onLoadDemoVideo}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border transition-colors cursor-pointer ${
                   isDark
-                    ? 'border-[#24282E] text-[#9CA3AF] hover:text-white'
+                    ? 'border-[#1F2421] text-[#A3AAA5] hover:text-white'
                     : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
                 }`}
               >
@@ -253,7 +253,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         {/* Real Progress Bar */}
         <div
           className={`w-full h-3 rounded-full overflow-hidden mb-3 ${
-            isDark ? 'bg-[#24282E]' : 'bg-[#F1F3F5]'
+            isDark ? 'bg-[#1F2421]' : 'bg-[#F1F3F5]'
           }`}
           role="progressbar"
           aria-valuenow={progressPercent}
@@ -269,7 +269,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
           <p
             className={`text-sm font-medium flex items-center gap-2 ${
-              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
             }`}
           >
             <Loader2 className="w-4 h-4 animate-spin text-[#4D7C0F] dark:text-[#BCEE45]" />
@@ -281,7 +281,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             onClick={onCancelConversion}
             className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
               isDark
-                ? 'border-[#2D323B] text-[#9CA3AF] hover:text-red-400 hover:border-red-900/50'
+                ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400 hover:border-red-900/50'
                 : 'border-[#E5E7EB] text-[#525866] hover:text-red-600 hover:border-red-200'
             }`}
           >
@@ -289,7 +289,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             <span>Cancelar conversão</span>
             <kbd
               className={`hidden sm:inline ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono border ${
-                isDark ? 'border-[#2D323B] text-[#6B7280]' : 'border-[#E5E7EB] text-[#6B7280]'
+                isDark ? 'border-[#2A302C] text-[#6B7280]' : 'border-[#E5E7EB] text-[#6B7280]'
               }`}
             >
               Esc
@@ -335,7 +335,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                   <span
                     className={`text-[10px] font-mono uppercase px-1.5 py-0.2 rounded ${
                       isDark
-                        ? 'bg-[#24282E] text-[#9CA3AF]'
+                        ? 'bg-[#1F2421] text-[#A3AAA5]'
                         : 'bg-[#F1F3F5] text-[#525866]'
                     }`}
                   >
@@ -351,7 +351,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               </h2>
               <div
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono mt-0.5 ${
-                  isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                  isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                 }`}
               >
                 <span>{formatBytes(video.size)}</span>
@@ -372,7 +372,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
               onClick={triggerFileBrowser}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
                 isDark
-                  ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:bg-[#24282E]'
+                  ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:bg-[#1F2421]'
                   : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
               }`}
             >
@@ -386,7 +386,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                 onClick={() => setConfirmRemove(true)}
                 className={`p-2 rounded-xl border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
                   isDark
-                    ? 'border-[#2D323B] text-[#9CA3AF] hover:text-red-400 hover:bg-red-950/30'
+                    ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400 hover:bg-red-950/30'
                     : 'border-[#E5E7EB] text-[#525866] hover:text-red-600 hover:bg-red-50'
                 }`}
                 aria-label="Remover vídeo selecionado"
@@ -411,7 +411,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
                   onClick={() => setConfirmRemove(false)}
                   className={`p-1.5 rounded-xl text-xs border cursor-pointer ${
                     isDark
-                      ? 'border-[#2D323B] text-[#9CA3AF]'
+                      ? 'border-[#2A302C] text-[#A3AAA5]'
                       : 'border-[#E5E7EB] text-[#525866]'
                   }`}
                   aria-label="Cancelar remoção"
@@ -437,214 +437,111 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     onDrop: handleDrop,
   }
 
-  const subtitle = isDragging
-    ? 'Solte o vídeo aqui para iniciar a preparação imediata.'
-    : 'Extraia músicas, trilhas sonoras, podcasts e instrumentais com fidelidade de estúdio em segundos.'
-
   return (
     <>
       {hiddenInput}
 
-      {/* ---------------- Mobile / tablet: single glass card ---------------- */}
-      <section
-        {...dragProps}
-        aria-label="Converter vídeo em áudio"
-        className={`glass glass-rim glass-glow lg:hidden rounded-[34px] px-4 pt-4 pb-5 text-center transition-transform duration-200 ${
-          isDragging ? 'scale-[1.01] ring-2 ring-[#BCEE45]' : ''
-        }`}
-      >
-        <HeroArt variant="mobile" />
-
-        <h1 className="text-strong mt-2 text-[2rem] sm:text-4xl font-bold leading-[1.1] tracking-tight">
-          Transforme vídeos
-          <br />
-          em áudio
-        </h1>
-        <p className="text-muted mx-auto mt-3 max-w-sm text-[15px] leading-relaxed">
-          {subtitle}
-        </p>
-
-        <div className="mt-6 space-y-3">
-          <button
-            type="button"
-            onClick={triggerFileBrowser}
-            className="btn-lime flex w-full items-center gap-4 rounded-full p-2 pr-6 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#BCEE45]"
-          >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-              <Upload className="h-6 w-6" strokeWidth={2.2} />
-            </span>
-            <span className="flex-1 text-xl font-bold">Selecionar vídeo</span>
-            <ChevronRight className="h-6 w-6" strokeWidth={2.2} />
-          </button>
-
-          <button
-            type="button"
-            onClick={onLoadDemoVideo}
-            className="btn-glass flex w-full items-center gap-3 rounded-full p-2 pr-4 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
-          >
-            <span className="icon-orb h-12 w-12 shrink-0">
-              <Play className="text-accent h-5 w-5" strokeWidth={2} />
-            </span>
-            <span className="flex-1 whitespace-nowrap text-[15px] font-medium leading-tight">
-              Testar com vídeo de exemplo
-            </span>
-            <ChevronRight className="text-muted h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="glass-soft mt-4 rounded-[26px] px-4 text-left">
-          <InfoRow
-            icon={<FileVideo className="h-6 w-6" strokeWidth={1.8} />}
-            title="Formatos aceitos"
-            detail={formatsLabel}
-            onClick={triggerFileBrowser}
-          />
-          <div className="ml-16 h-px bg-[var(--glass-hairline)]" />
-          <InfoRow
-            icon={<Database className="h-6 w-6" strokeWidth={1.8} />}
-            title="Tamanho máximo"
-            detail={MAX_FILE_SIZE_LABEL}
-            onClick={triggerFileBrowser}
-          />
-        </div>
-
-        {/* Bottom row: the mascot floats on the left, chat pill on the right */}
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={onTalkToMascot}
-            className="btn-glass inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
-          >
-            <MessageCircle className="text-accent h-5 w-5" strokeWidth={2} />
-            <span>Falar com a Capivara</span>
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </section>
-
-      {/* ---------------- Desktop: hero + dropzone + info cards ---------------- */}
-      <section
-        aria-label="Converter vídeo em áudio"
-        className="glass glass-rim glass-glow hidden lg:block overflow-hidden rounded-[32px] p-8 xl:p-10"
-      >
-        <div className="grid grid-cols-[1fr_minmax(300px,0.9fr)] items-center gap-6">
-          <div>
-            <h1 className="text-strong text-5xl 2xl:text-6xl font-extrabold leading-[1.02] tracking-tight">
-              Transforme
-              <br />
-              vídeos em <span className="text-accent">áudio</span>
-            </h1>
-            <p className="text-muted mt-5 max-w-lg text-lg leading-relaxed">
-              {subtitle}
-            </p>
-          </div>
-          <HeroArt variant="desktop" />
+      <section aria-label="Converter vídeo em áudio" className="flex flex-col gap-8">
+        <div className="max-w-2xl">
+          <h1 className="text-strong text-[2rem] sm:text-[2.75rem] font-semibold leading-[1.05]">
+            Do vídeo ao áudio,
+            <br />
+            <span className="text-accent">sem complicação.</span>
+          </h1>
+          <p className="text-muted mt-3 max-w-xl text-[15px] sm:text-base leading-relaxed">
+            Extraia a trilha de qualquer vídeo, corte o trecho que importa e baixe em MP3, WAV, M4A ou AAC.
+          </p>
         </div>
 
         <div
           {...dragProps}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          className={`dropzone-dashed mt-8 rounded-[26px] p-5 text-center transition-all duration-200 ${
+          className={`dropzone-dashed flex flex-col items-center gap-5 rounded-3xl px-5 py-10 sm:px-8 sm:py-14 text-center transition-colors duration-200 ${
             isDragging
-              ? 'border-[#BCEE45]! bg-[#BCEE45]/10 scale-[1.01]'
+              ? 'border-[var(--accent-text)]! bg-[var(--accent-soft)]!'
               : isHovered
-                ? 'bg-[var(--glass-bg-soft)]'
+                ? 'bg-[var(--surface-2)]!'
                 : ''
           }`}
         >
           <button
             type="button"
             onClick={triggerFileBrowser}
-            className="glass-soft mx-auto mt-3 flex h-20 w-24 items-center justify-center rounded-3xl cursor-pointer transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+            className="icon-orb h-[72px] w-[72px] rounded-[20px]! cursor-pointer transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
             aria-label="Selecionar vídeo"
           >
-            <Upload className="text-strong h-8 w-8" strokeWidth={2} />
+            <Upload className="h-8 w-8" strokeWidth={2} />
           </button>
-          <p className="text-strong mt-5 text-xl font-semibold">
-            {isDragging ? 'Pode soltar!' : 'Arraste e solte seu vídeo aqui'}
-          </p>
-          <p className="text-muted mt-1.5">
-            ou{' '}
+          <div>
+            <h2 className="text-strong text-xl sm:text-2xl font-semibold">
+              {isDragging ? 'Pode soltar!' : 'Arraste seu vídeo para cá'}
+            </h2>
+            <p className="text-muted mt-1.5 text-sm">
+              {formatsLabel} · até {MAX_FILE_SIZE_LABEL}
+            </p>
+          </div>
+          <div className="flex w-full flex-col sm:w-auto sm:flex-row flex-wrap justify-center gap-3">
             <button
               type="button"
               onClick={triggerFileBrowser}
-              className="text-accent font-medium hover:underline cursor-pointer focus:outline-none focus-visible:underline"
+              className="btn-lime inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 text-[15px] font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--ring)]"
             >
-              clique para selecionar
-            </button>
-          </p>
-          <p className="text-faint mt-3 text-sm">
-            {formatsLabel} <span className="mx-2">•</span> Até {MAX_FILE_SIZE_LABEL}
-          </p>
-
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={triggerFileBrowser}
-              className="btn-lime flex items-center justify-center gap-3 rounded-2xl py-4 text-lg font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#BCEE45]"
-            >
-              <FolderOpen className="h-6 w-6" strokeWidth={2} />
-              <span>Selecionar vídeo</span>
+              <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
+              Selecionar vídeo
             </button>
             <button
               type="button"
               onClick={onLoadDemoVideo}
-              className="btn-glass flex items-center justify-center gap-3 rounded-2xl py-4 text-lg font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
+              className="btn-glass inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
             >
-              <Play className="text-accent h-6 w-6" strokeWidth={2} />
-              <span>Testar com vídeo de exemplo</span>
+              <Play className="h-[18px] w-[18px]" strokeWidth={2} />
+              Usar vídeo de exemplo
             </button>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <InfoCard
-            icon={<FileVideo className="h-6 w-6" strokeWidth={1.8} />}
-            title="Formatos aceitos"
-            detail={formatsLabel}
+        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <FeatureItem
+            icon={<Music className="h-5 w-5" strokeWidth={2} />}
+            title="4 formatos de áudio"
+            detail="MP3, WAV, M4A e AAC, com a qualidade que você escolher."
           />
-          <InfoCard
-            icon={<Database className="h-6 w-6" strokeWidth={1.8} />}
-            title="Tamanho máximo"
-            detail={MAX_FILE_SIZE_LABEL}
+          <FeatureItem
+            icon={<Scissors className="h-5 w-5" strokeWidth={2} />}
+            title="Corte e normalização"
+            detail="Pegue só o trecho que importa, com volume de estúdio."
           />
-        </div>
+          <FeatureItem
+            icon={<Lock className="h-5 w-5" strokeWidth={2} />}
+            title="Privado por padrão"
+            detail="Arquivos são apagados assim que a conversão termina."
+          />
+        </ul>
+
+        <button
+          type="button"
+          onClick={onTalkToMascot}
+          className="btn-glass lg:hidden inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl px-4 text-sm font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          <MessageCircle className="text-accent h-[18px] w-[18px]" strokeWidth={2} />
+          Falar com a Capivara
+        </button>
       </section>
     </>
   )
 }
 
-const InfoRow: React.FC<{
-  icon: React.ReactNode
-  title: string
-  detail: string
-  onClick: () => void
-}> = ({ icon, title, detail, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="flex w-full items-center gap-4 rounded-2xl py-3.5 text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#BCEE45]"
-  >
-    <span className="icon-orb h-12 w-12 shrink-0">{icon}</span>
-    <span className="min-w-0 flex-1">
-      <span className="text-strong block text-base font-semibold">{title}</span>
-      <span className="text-muted block text-sm leading-snug">{detail}</span>
-    </span>
-    <ChevronRight className="text-muted h-5 w-5 shrink-0" />
-  </button>
-)
-
-const InfoCard: React.FC<{
+const FeatureItem: React.FC<{
   icon: React.ReactNode
   title: string
   detail: string
 }> = ({ icon, title, detail }) => (
-  <div className="glass-soft flex items-center gap-5 rounded-[22px] p-5">
-    <span className="icon-orb h-16 w-16 shrink-0">{icon}</span>
-    <div className="min-w-0">
-      <p className="text-strong text-lg font-semibold">{title}</p>
-      <p className="text-muted mt-0.5 leading-snug">{detail}</p>
-    </div>
-  </div>
+  <li className="glass flex gap-3.5 rounded-2xl p-4 sm:p-5">
+    <span className="text-accent mt-0.5 shrink-0">{icon}</span>
+    <span className="flex flex-col gap-1">
+      <span className="text-strong text-sm font-semibold">{title}</span>
+      <span className="text-muted text-[13px] leading-relaxed">{detail}</span>
+    </span>
+  </li>
 )

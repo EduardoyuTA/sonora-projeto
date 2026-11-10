@@ -33,6 +33,7 @@ import {
 import {
   DesktopTopBar,
   MobileHeader,
+  ConversionSteps,
   MobileTabBar,
   Sidebar,
 } from './components/Navbar'
@@ -184,12 +185,12 @@ export function App() {
     const root = document.documentElement
     if (settings.theme === 'dark') {
       root.classList.add('dark')
-      document.body.style.backgroundColor = '#070909'
-      document.body.style.color = '#F3F4F6'
+      document.body.style.backgroundColor = '#0A0C0B'
+      document.body.style.color = '#F2F4F0'
     } else {
       root.classList.remove('dark')
-      document.body.style.backgroundColor = '#EDF1EA'
-      document.body.style.color = '#111315'
+      document.body.style.backgroundColor = '#F3F5F1'
+      document.body.style.color = '#0F1211'
     }
   }, [settings.theme])
 
@@ -628,16 +629,17 @@ export function App() {
         isConverting={isConverting}
       />
 
-      <div className="lg:flex lg:gap-5 lg:p-5">
+      <div className="lg:flex">
         <Sidebar
           activeTab={activeTab}
           onSelectTab={setActiveTab}
           historyCount={historyItems.length}
           isConverting={isConverting}
           onTalkToMascot={handleTalkToMascot}
+          processingMode={settings.processingMode}
         />
 
-        <div className="flex-1 min-w-0 flex flex-col min-h-screen lg:min-h-[calc(100dvh-2.5rem)] px-3 sm:px-6 lg:px-0 pb-44 lg:pb-0">
+        <div className="flex-1 min-w-0 flex flex-col min-h-screen px-4 sm:px-6 lg:px-10 lg:pt-6 pb-44 lg:pb-0">
           <MobileHeader
             onSelectTab={setActiveTab}
             theme={settings.theme}
@@ -646,15 +648,21 @@ export function App() {
             onLogout={handleLogout}
           />
           <DesktopTopBar
-            processingMode={settings.processingMode}
+            activeTab={activeTab}
+            conversionState={conversionState}
             theme={settings.theme}
             onToggleTheme={handleToggleTheme}
             user={authUser}
             onLogout={handleLogout}
           />
+          {activeTab === 'converter' && (
+            <div className="lg:hidden pb-5">
+              <ConversionSteps state={conversionState} />
+            </div>
+          )}
 
       {/* Main Content Container */}
-      <main className="flex-1 w-full max-w-xl lg:max-w-6xl mx-auto">
+      <main className="flex-1 w-full max-w-xl lg:max-w-5xl">
         {activeTab === 'converter' && (
           <div className="space-y-6">
             {/* Upload / Active Video Zone */}
@@ -735,7 +743,7 @@ export function App() {
       </main>
 
       <footer className="text-faint mt-10 py-6 text-xs">
-        <div className="max-w-xl lg:max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-2 text-center lg:text-left">
+        <div className="max-w-xl lg:max-w-5xl flex flex-col lg:flex-row items-center justify-between gap-2 text-center lg:text-left border-t border-[var(--border)] pt-6">
           <span>
             <strong className="text-muted">SONORA</strong> — Conversão de vídeo para áudio com precisão e privacidade.
           </span>

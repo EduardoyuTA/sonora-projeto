@@ -78,7 +78,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       <div
         className={`rounded-3xl border p-6 sm:p-8 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -93,7 +93,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             </h1>
             <p
               className={`text-sm mt-1 ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
             >
               Seus arquivos são mantidos exclusivamente no armazenamento local do seu navegador para sua privacidade.
@@ -108,7 +108,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   onClick={() => setConfirmClearAll(true)}
                   className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
                     isDark
-                      ? 'border-[#2D323B] text-[#9CA3AF] hover:text-red-400 hover:border-red-900/50'
+                      ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400 hover:border-red-900/50'
                       : 'border-[#E5E7EB] text-[#525866] hover:text-red-600 hover:border-red-200'
                   }`}
                 >
@@ -135,7 +135,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     onClick={() => setConfirmClearAll(false)}
                     className={`p-2 rounded-xl border text-xs cursor-pointer ${
                       isDark
-                        ? 'border-[#2D323B] text-[#9CA3AF]'
+                        ? 'border-[#2A302C] text-[#A3AAA5]'
                         : 'border-[#E5E7EB] text-[#525866]'
                     }`}
                     aria-label="Cancelar"
@@ -152,7 +152,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         <div
           className={`mt-5 p-3.5 rounded-2xl border flex items-center gap-3 text-xs ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF]'
+              ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
               : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
           }`}
         >
@@ -168,14 +168,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
         <div
           className={`rounded-3xl border p-12 text-center ${
             isDark
-              ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+              ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
               : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
           }`}
         >
           <div
             className={`w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
               isDark
-                ? 'bg-[#1C1F24] text-[#BCEE45]'
+                ? 'bg-[#161A18] text-[#BCEE45]'
                 : 'bg-[#F1F3F5] text-[#111315]'
             }`}
           >
@@ -186,7 +186,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           </h2>
           <p
             className={`text-sm max-w-md mx-auto mb-6 ${
-              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
             }`}
           >
             Assim que você converter seu primeiro vídeo em áudio, poderá ouvi-lo ou baixá-lo novamente a qualquer momento.
@@ -211,7 +211,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 key={item.id}
                 className={`rounded-2xl border p-4 sm:p-5 transition-all ${
                   isDark
-                    ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+                    ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
                     : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
                 }`}
               >
@@ -220,7 +220,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     <div
                       className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs uppercase ${
                         isDark
-                          ? 'bg-[#24282E] text-[#BCEE45]'
+                          ? 'bg-[#1F2421] text-[#BCEE45]'
                           : 'bg-[#ECFCCB] text-[#3F6212]'
                       }`}
                     >
@@ -236,7 +236,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       </h3>
                       <div
                         className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs mt-0.5 ${
-                          isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                          isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                         }`}
                       >
                         <span className="truncate max-w-[200px]" title={item.originalFileName}>
@@ -268,7 +268,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                             isPreviewOpen
                               ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315] font-semibold'
                               : isDark
-                                ? 'bg-[#1C1F24] border-[#2D323B] text-[#F3F4F6] hover:bg-[#24282E]'
+                                ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:bg-[#1F2421]'
                                 : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
                           }`}
                         >
@@ -289,7 +289,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs border ${
                           isDark
-                            ? 'border-[#2D323B] text-[#9CA3AF]'
+                            ? 'border-[#2A302C] text-[#A3AAA5]'
                             : 'border-[#E5E7EB] text-[#525866]'
                         }`}
                         title="Você desativou o armazenamento de cópias de áudio nas configurações de privacidade."
@@ -305,7 +305,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         onClick={() => setItemToDelete(item.id)}
                         className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                           isDark
-                            ? 'border-[#2D323B] text-[#9CA3AF] hover:text-red-400'
+                            ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400'
                             : 'border-[#E5E7EB] text-[#525866] hover:text-red-600'
                         }`}
                         aria-label={`Remover ${item.outputFileName} do histórico`}
@@ -345,7 +345,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
                 {/* Inline Waveform Player when User Clicks 'Ouvir' */}
                 {isPreviewOpen && playingUrl && (
-                  <div className="mt-4 pt-4 border-t border-[#E5E7EB] dark:border-[#24282E]">
+                  <div className="mt-4 pt-4 border-t border-[#E5E7EB] dark:border-[#1F2421]">
                     <WaveformPlayer
                       audioUrl={playingUrl}
                       fileName={item.outputFileName}

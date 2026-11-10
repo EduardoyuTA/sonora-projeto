@@ -98,7 +98,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <div
         className={`rounded-3xl border p-6 sm:p-8 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -111,7 +111,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </h1>
         <p
           className={`text-sm mt-1 ${
-            isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+            isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
           }`}
         >
           Personalize aparência, formato padrão, privacidade e motor de processamento. Todas as alterações são salvas automaticamente.
@@ -122,7 +122,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section
         className={`rounded-3xl border p-6 sm:p-7 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -136,11 +136,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
-            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]">
+            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
               Tema da Interface
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -151,7 +151,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   settings.theme === 'light'
                     ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
                     : isDark
-                      ? 'border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                      ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
                       : 'border-[#E5E7EB] text-[#525866]'
                 }`}
               >
@@ -166,7 +166,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   settings.theme === 'dark'
                     ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
                     : isDark
-                      ? 'border-[#2D323B] text-[#9CA3AF]'
+                      ? 'border-[#2A302C] text-[#A3AAA5]'
                       : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
                 }`}
               >
@@ -180,14 +180,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
-            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]">
+            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
               Idioma do Sistema
             </div>
-            <div className="flex items-center justify-between py-2 px-3 rounded-xl border bg-white/50 dark:bg-[#15171A] border-[#E5E7EB] dark:border-[#2D323B]">
+            <div className="flex items-center justify-between py-2 px-3 rounded-xl border bg-white/50 dark:bg-[#121513] border-[#E5E7EB] dark:border-[#2A302C]">
               <span className="inline-flex items-center gap-2 text-xs font-semibold">
                 <Globe className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
                 <span>Português (Brasil) — pt-BR</span>
@@ -203,7 +203,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <label
           className={`mt-4 flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B]'
+              ? 'bg-[#161A18] border-[#2A302C]'
               : 'bg-[#F9FAFB] border-[#E5E7EB]'
           }`}
         >
@@ -213,7 +213,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div
               className={`text-xs ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
             >
               Simplifica transições visuais para maior conforto visual
@@ -237,7 +237,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section
         className={`rounded-3xl border p-6 sm:p-7 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -251,11 +251,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
-            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]">
+            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
               Formato Padrão
             </label>
             <div className="grid grid-cols-4 gap-1.5">
@@ -268,7 +268,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     settings.defaultFormat === fmt
                       ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
                       : isDark
-                        ? 'border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                        ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
                         : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
                   }`}
                 >
@@ -282,11 +282,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
-            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]">
+            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
               Qualidade Padrão
             </label>
             <div className="grid grid-cols-3 gap-1.5">
@@ -305,7 +305,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     settings.defaultQualityTier === q.id
                       ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
                       : isDark
-                        ? 'border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                        ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
                         : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
                   }`}
                 >
@@ -320,11 +320,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div
           className={`p-4 rounded-2xl border mb-4 ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B]'
+              ? 'bg-[#161A18] border-[#2A302C]'
               : 'bg-[#F9FAFB] border-[#E5E7EB]'
           }`}
         >
-          <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#9CA3AF]">
+          <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
             Arquitetura de Processamento
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -339,7 +339,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white'
                     : 'bg-[#ECFCCB]/70 border-[#65A30D] text-[#111315]'
                   : isDark
-                    ? 'border-[#2D323B] text-[#9CA3AF]'
+                    ? 'border-[#2A302C] text-[#A3AAA5]'
                     : 'border-[#E5E7EB] text-[#525866]'
               }`}
             >
@@ -365,7 +365,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white'
                     : 'bg-[#ECFCCB]/70 border-[#65A30D] text-[#111315]'
                   : isDark
-                    ? 'border-[#2D323B] text-[#9CA3AF]'
+                    ? 'border-[#2A302C] text-[#A3AAA5]'
                     : 'border-[#E5E7EB] text-[#525866]'
               }`}
             >
@@ -383,12 +383,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div
           className={`p-4 rounded-2xl border mb-4 ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B]'
+              ? 'bg-[#161A18] border-[#2A302C]'
               : 'bg-[#F9FAFB] border-[#E5E7EB]'
           }`}
         >
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#9CA3AF]">
+            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#A3AAA5]">
               <Server className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#BCEE45]" />
               <span>Conexão com Servidor FFmpeg (Render / Local)</span>
             </div>
@@ -400,7 +400,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ? 'bg-[#BCEE45]/15 border-[#BCEE45]/50 text-[#BCEE45]'
                     : 'bg-[#ECFCCB] border-[#65A30D]/40 text-[#3F6212]'
                   : isDark
-                    ? 'bg-[#24282E] border-[#374151] text-[#9CA3AF]'
+                    ? 'bg-[#1F2421] border-[#374151] text-[#A3AAA5]'
                     : 'bg-white border-[#D1D5DB] text-[#525866]'
               }`}
             >
@@ -420,7 +420,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <p
             className={`text-xs mb-3 ${
-              isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
             }`}
           >
             Se o backend FFmpeg estiver hospedado no Render, informe a URL abaixo (ou defina{' '}
@@ -435,8 +435,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="https://sonora-ffmpeg-api.onrender.com"
               className={`flex-1 px-3.5 py-2 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-[#A3E635] ${
                 isDark
-                  ? 'bg-[#15171A] border-[#2D323B] text-white placeholder-[#6B7280]'
-                  : 'bg-white border-[#D1D5DB] text-[#111315] placeholder-[#9CA3AF]'
+                  ? 'bg-[#121513] border-[#2A302C] text-white placeholder-[#6B7280]'
+                  : 'bg-white border-[#D1D5DB] text-[#111315] placeholder-[#A3AAA5]'
               }`}
             />
             <button
@@ -457,7 +457,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <label
           className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
             isDark
-              ? 'bg-[#1C1F24] border-[#2D323B]'
+              ? 'bg-[#161A18] border-[#2A302C]'
               : 'bg-[#F9FAFB] border-[#E5E7EB]'
           }`}
         >
@@ -467,7 +467,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div
               className={`text-xs ${
-                isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
               }`}
             >
               Mantém o último formato e taxa de bits escolhidos ao abrir um novo vídeo
@@ -491,7 +491,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section
         className={`rounded-3xl border p-6 sm:p-7 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -504,7 +504,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <label
             className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
@@ -514,7 +514,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
               <div
                 className={`text-xs ${
-                  isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                  isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                 }`}
               >
                 Permite ouvir e baixar novamente os áudios convertidos sem precisar reenviar o vídeo
@@ -536,7 +536,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B]'
+                ? 'bg-[#161A18] border-[#2A302C]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB]'
             }`}
           >
@@ -547,7 +547,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
               <div
                 className={`text-xs ${
-                  isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'
+                  isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
                 }`}
               >
                 Exclui imediatamente todos os registros e arquivos de áudio armazenados no navegador.
@@ -578,7 +578,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <section
         className={`rounded-3xl border p-6 sm:p-7 ${
           isDark
-            ? 'bg-[#15171A] border-[#24282E] text-[#F3F4F6]'
+            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
             : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
         }`}
       >
@@ -591,7 +591,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF]'
+                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
             }`}
           >
@@ -621,7 +621,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div
             className={`p-4 rounded-2xl border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF]'
+                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
                 : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
             }`}
           >

@@ -150,7 +150,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     <div
       className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
         isDark
-          ? 'bg-[#111316] border-[#24282E] text-[#F3F4F6]'
+          ? 'bg-[#111316] border-[#1F2421] text-[#F3F4F6]'
           : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315]'
       }`}
     >
@@ -201,7 +201,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           <span
             className={`px-2 py-0.5 rounded-md border ${
               isDark
-                ? 'bg-[#1C1F24] border-[#2D323B] text-[#9CA3AF]'
+                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
                 : 'bg-white border-[#E5E7EB] text-[#525866]'
             }`}
           >
@@ -256,8 +256,8 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
                           ? 'bg-[#BCEE45]'
                           : 'bg-[#65A30D]'
                         : isDark
-                          ? 'bg-[#2D323B] hover:bg-[#3E4552]'
-                          : 'bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+                          ? 'bg-[#2A302C] hover:bg-[#3E4552]'
+                          : 'bg-[#D1D5DB] hover:bg-[#A3AAA5]'
                     }`}
                     style={{
                       height: `${heightPercent}%`,
@@ -271,13 +271,13 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
       </div>
 
       {/* Bottom Controls Row: Time, Restart, Playback Speed, Volume */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-[#E5E7EB] dark:border-[#24282E] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-[#E5E7EB] dark:border-[#1F2421] text-xs">
         <div className="flex items-center gap-3">
           <span className="font-mono font-medium">
             <strong className={isDark ? 'text-white' : 'text-[#111315]'}>
               {formatDuration(currentTime)}
             </strong>{' '}
-            <span className={isDark ? 'text-[#9CA3AF]' : 'text-[#525866]'}>
+            <span className={isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'}>
               / {formatDuration(resolvedDuration)}
             </span>
           </span>
@@ -287,7 +287,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
             onClick={handleRestart}
             className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
               isDark
-                ? 'border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
                 : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
             }`}
             title="Voltar ao início"
@@ -301,7 +301,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
             onClick={cyclePlaybackRate}
             className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border font-mono font-medium transition-colors cursor-pointer ${
               isDark
-                ? 'border-[#2D323B] text-[#9CA3AF] hover:text-white'
+                ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
                 : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
             }`}
             title="Alterar velocidade de reprodução"
@@ -319,7 +319,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
             onClick={toggleMute}
             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               isDark
-                ? 'text-[#9CA3AF] hover:text-white'
+                ? 'text-[#A3AAA5] hover:text-white'
                 : 'text-[#525866] hover:text-[#111315]'
             }`}
             aria-label={isMuted ? 'Ativar som' : 'Silenciar'}

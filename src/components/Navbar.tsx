@@ -1,6 +1,7 @@
 import React from 'react'
 import {
-  ChevronRight,
+  AudioWaveform,
+  Check,
   History,
   LogOut,
   MessageCircle,
@@ -8,10 +9,14 @@ import {
   Music,
   Settings,
   ShieldCheck,
-  Sparkles,
   Sun,
 } from 'lucide-react'
-import type { ActiveTab, AuthUser, ProcessingMode } from '../types/sonora'
+import type {
+  ActiveTab,
+  AuthUser,
+  ConversionState,
+  ProcessingMode,
+} from '../types/sonora'
 
 interface NavItem {
   id: ActiveTab
@@ -29,67 +34,38 @@ const buildNavItems = (historyCount: number): NavItem[] => [
   { id: 'configuracoes', label: 'Configurações' },
 ]
 
-const NavIcon: React.FC<{ id: ActiveTab; variant: 'sidebar' | 'tab' }> = ({
+const NavIcon: React.FC<{ id: ActiveTab; className?: string }> = ({
   id,
-  variant,
+  className = 'w-5 h-5',
 }) => {
-  const size = 'w-6 h-6'
-  if (id === 'converter') {
-    return variant === 'sidebar' ? (
-      <Music className={size} strokeWidth={1.8} />
-    ) : (
-      <Sparkles className={size} strokeWidth={1.8} />
-    )
-  }
-  if (id === 'historico') return <History className={size} strokeWidth={1.8} />
-  return <Settings className={size} strokeWidth={1.8} />
+  if (id === 'converter') return <Music className={className} strokeWidth={2} />
+  if (id === 'historico') return <History className={className} strokeWidth={2} />
+  return <Settings className={className} strokeWidth={2} />
 }
 
 const focusRing =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635]'
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]'
 
 /* ----------------------------- Brand block ----------------------------- */
 
-const Brand: React.FC<{ size: 'md' | 'lg'; onClick: () => void }> = ({
-  size,
-  onClick,
-}) => {
-  const avatar =
-    size === 'lg' ? 'w-16 h-16 rounded-[20px]' : 'w-14 h-14 rounded-[18px]'
-  const title = size === 'lg' ? 'text-2xl' : 'text-xl'
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-3.5 rounded-2xl text-left cursor-pointer ${focusRing}`}
-      aria-label="SONORA - Ir para a tela de conversão"
-    >
-      <div
-        className={`${avatar} shrink-0 overflow-hidden border-[3px] border-[#BCEE45] bg-white shadow-[0_0_24px_rgba(188,238,69,0.45)]`}
-      >
-        <img
-          src="/mascote.png"
-          alt=""
-          className="h-full w-full object-cover object-[50%_30%] scale-[1.15]"
-          draggable={false}
-        />
-      </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`text-strong ${title} font-bold tracking-tight leading-none`}>
-            SONORA
-          </span>
-          <span className="text-accent rounded-full border border-[#BCEE45]/40 bg-[#BCEE45]/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em]">
-            Studio
-          </span>
-        </div>
-        <span className="text-muted mt-1.5 block text-[15px] leading-tight">
-          Vídeo para Áudio
-        </span>
-      </div>
-    </button>
-  )
-}
+const Brand: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center gap-3 rounded-xl text-left cursor-pointer ${focusRing}`}
+    aria-label="SONORA - Ir para a tela de conversão"
+  >
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[var(--accent)] text-[#0A0C0B]">
+      <AudioWaveform className="h-5 w-5" strokeWidth={2.4} />
+    </span>
+    <span className="flex flex-col">
+      <span className="font-display text-strong text-lg font-bold leading-tight tracking-[0.04em]">
+        SONORA
+      </span>
+      <span className="text-muted text-xs">Vídeo para áudio</span>
+    </span>
+  </button>
+)
 
 /* ------------------------- Shared action buttons ------------------------ */
 
@@ -108,25 +84,25 @@ const ThemeAndLogout: React.FC<ThemeLogoutProps> = ({
 }) => {
   const isDark = theme === 'dark'
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={onToggleTheme}
-        className={`btn-glass h-12 w-12 rounded-full flex items-center justify-center cursor-pointer ${focusRing}`}
+        className={`btn-glass h-11 w-11 rounded-xl flex items-center justify-center cursor-pointer ${focusRing}`}
         aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
         title={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
       >
         {isDark ? (
-          <Sun className="h-5 w-5 text-[#BCEE45]" />
+          <Sun className="text-muted h-[18px] w-[18px]" />
         ) : (
-          <Moon className="h-5 w-5 text-[#4D7C0F]" />
+          <Moon className="text-muted h-[18px] w-[18px]" />
         )}
       </button>
       {user && onLogout && (
         <button
           type="button"
           onClick={onLogout}
-          className={`btn-glass h-12 w-12 rounded-full flex items-center justify-center cursor-pointer ${focusRing}`}
+          className={`btn-glass h-11 rounded-xl flex items-center gap-2.5 pl-1.5 pr-3 cursor-pointer ${focusRing}`}
           title={
             user.provider === 'guest'
               ? 'Usando sem conta — Clique para sair'
@@ -134,10 +110,76 @@ const ThemeAndLogout: React.FC<ThemeLogoutProps> = ({
           }
           aria-label="Sair da conta"
         >
-          <LogOut className="h-5 w-5" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-3)] text-sm font-semibold">
+            {(user.name || 'V').charAt(0).toUpperCase()}
+          </span>
+          <span className="hidden sm:block max-w-[140px] truncate text-sm font-medium">
+            {user.name}
+          </span>
+          <LogOut className="text-muted h-4 w-4" />
         </button>
       )}
     </div>
+  )
+}
+
+/* ------------------------------ Etapas -------------------------------- */
+
+const STEPS = ['Vídeo', 'Formato', 'Baixar'] as const
+
+const stepFromState = (state: ConversionState): number => {
+  if (state === 'success') return 2
+  if (state === 'loaded' || state === 'converting') return 1
+  return 0
+}
+
+export const ConversionSteps: React.FC<{ state: ConversionState }> = ({
+  state,
+}) => {
+  const current = stepFromState(state)
+  return (
+    <ol
+      aria-label="Etapas da conversão"
+      className="flex flex-wrap items-center gap-1.5 text-[13px]"
+    >
+      {STEPS.map((label, index) => {
+        const done = index < current
+        const active = index === current
+        return (
+          <React.Fragment key={label}>
+            {index > 0 && (
+              <li
+                aria-hidden="true"
+                className={`h-px w-5 sm:w-6 ${
+                  index <= current ? 'bg-[var(--accent-text)]' : 'bg-[var(--border-strong)]'
+                }`}
+              />
+            )}
+            <li
+              aria-current={active ? 'step' : undefined}
+              className={`flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 ${
+                active
+                  ? 'bg-[var(--surface-3)] text-strong font-semibold'
+                  : 'text-muted'
+              }`}
+            >
+              <span
+                className={`step-dot ${
+                  active
+                    ? 'bg-[var(--accent)] text-[#0A0C0B]'
+                    : done
+                      ? 'bg-[var(--accent-soft)] text-accent'
+                      : 'border border-[var(--border-strong)]'
+                }`}
+              >
+                {done ? <Check className="h-3 w-3" strokeWidth={3} /> : index + 1}
+              </span>
+              {label}
+            </li>
+          </React.Fragment>
+        )
+      })}
+    </ol>
   )
 }
 
@@ -149,6 +191,7 @@ interface SidebarProps {
   historyCount: number
   isConverting: boolean
   onTalkToMascot: () => void
+  processingMode: ProcessingMode
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -157,16 +200,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   historyCount,
   isConverting,
   onTalkToMascot,
+  processingMode,
 }) => {
   const navItems = buildNavItems(historyCount)
+  const isLocalOnly = processingMode === 'browser-only'
   return (
-    <aside className="glass glass-rim glass-glow hidden lg:flex sticky top-5 h-[calc(100dvh-2.5rem)] w-[19rem] shrink-0 flex-col rounded-[30px] p-5">
-      <div className="px-1 pt-3 pb-6">
-        <Brand size="lg" onClick={() => onSelectTab('converter')} />
+    <aside className="hidden lg:flex sticky top-0 h-dvh w-64 shrink-0 flex-col gap-7 border-r border-[var(--border)] bg-[var(--surface)] px-4 py-6 dark:bg-[#0D100E]">
+      <div className="px-2">
+        <Brand onClick={() => onSelectTab('converter')} />
       </div>
-      <div className="mx-1 mb-5 h-px bg-[var(--glass-hairline)]" />
 
-      <nav aria-label="Navegação principal" className="flex flex-col gap-2">
+      <nav aria-label="Navegação principal" className="flex flex-col gap-1">
         {navItems.map((item) => {
           const active = activeTab === item.id
           return (
@@ -175,24 +219,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={() => onSelectTab(item.id)}
               aria-current={active ? 'page' : undefined}
-              className={`relative flex items-center gap-4 rounded-2xl px-5 py-3.5 text-base font-medium transition-colors cursor-pointer ${focusRing} ${
+              className={`relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors cursor-pointer ${focusRing} ${
                 active
-                  ? 'glass-soft glass-rim text-strong bg-[#BCEE45]/10 shadow-[0_0_24px_rgba(188,238,69,0.18)]'
-                  : 'text-muted hover:text-[var(--text-strong)] hover:bg-[var(--glass-bg-soft)]'
+                  ? 'bg-[var(--surface-3)] text-strong font-semibold shadow-[inset_2px_0_0_var(--accent-text)]'
+                  : 'text-muted font-medium hover:bg-[var(--surface-2)] hover:text-[var(--text-strong)]'
               }`}
             >
-              <span className={active ? 'text-accent' : ''}>
-                <NavIcon id={item.id} variant="sidebar" />
-              </span>
+              <NavIcon id={item.id} className="h-[18px] w-[18px]" />
               <span>{item.label}</span>
               {item.id === 'converter' && isConverting && (
                 <span
-                  className="ml-auto h-2 w-2 animate-pulse rounded-full bg-[#BCEE45]"
+                  className="ml-auto h-2 w-2 animate-pulse rounded-full bg-[var(--accent)]"
                   title="Conversão em andamento"
                 />
               )}
               {item.badge !== undefined && (
-                <span className="ml-auto rounded-full bg-[#BCEE45] px-2 py-0.5 font-mono text-xs font-bold text-[#111315]">
+                <span className="text-muted ml-auto rounded-full bg-[var(--surface-2)] px-2 py-0.5 font-mono text-xs">
                   {item.badge}
                 </span>
               )}
@@ -201,56 +243,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Space reserved for the capybara mascot, which floats here */}
+      {/* Espaço onde a capivara fica apoiada */}
       <div className="flex-1" />
 
-      <button
-        type="button"
-        onClick={onTalkToMascot}
-        className={`btn-glass flex items-center gap-2.5 whitespace-nowrap rounded-full px-4 py-3.5 text-[15px] font-medium cursor-pointer ${focusRing}`}
-      >
-        <MessageCircle className="text-accent h-6 w-6 shrink-0" strokeWidth={2} />
-        <span>Falar com a Capivara</span>
-        <ChevronRight className="ml-auto h-5 w-5" />
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={onTalkToMascot}
+          className={`btn-glass flex min-h-11 items-center justify-center gap-2 rounded-[10px] px-3 text-sm font-medium cursor-pointer ${focusRing}`}
+        >
+          <MessageCircle className="text-accent h-[18px] w-[18px]" strokeWidth={2} />
+          Falar com a Capivara
+        </button>
+        <p
+          className="text-muted flex items-center gap-2 px-2 text-xs"
+          title={
+            isLocalOnly
+              ? 'Seus arquivos são processados apenas no seu navegador e nunca saem do dispositivo.'
+              : 'Modo híbrido: quando necessário, o vídeo é enviado com segurança ao servidor de conversão e apagado logo após o processamento.'
+          }
+        >
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+          {isLocalOnly ? 'Processamento 100% local' : 'Nada fica guardado no servidor'}
+        </p>
+      </div>
     </aside>
   )
 }
 
 interface DesktopTopBarProps extends ThemeLogoutProps {
-  processingMode: ProcessingMode
+  activeTab: ActiveTab
+  conversionState: ConversionState
+}
+
+const TAB_TITLES: Record<ActiveTab, string> = {
+  converter: 'Converter',
+  historico: 'Histórico',
+  configuracoes: 'Configurações',
 }
 
 export const DesktopTopBar: React.FC<DesktopTopBarProps> = ({
-  processingMode,
+  activeTab,
+  conversionState,
   ...rest
-}) => {
-  const isLocalOnly = processingMode === 'browser-only'
-  return (
-    <div className="hidden lg:flex items-center justify-end gap-3 pb-4">
-      <div
-        className="glass-soft text-muted flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
-        title={
-          isLocalOnly
-            ? 'Seus arquivos são processados apenas no seu navegador e nunca saem do dispositivo.'
-            : 'Modo híbrido: quando necessário, o vídeo é enviado com segurança ao nosso servidor de conversão e apagado logo após o processamento. Altere em Configurações.'
-        }
-      >
-        <ShieldCheck className="text-accent h-4 w-4" />
-        <span>{isLocalOnly ? 'Processamento 100% local' : 'Processamento seguro'}</span>
-      </div>
-      {rest.user && (
-        <span
-          className="text-muted max-w-[180px] truncate text-sm font-medium"
-          title={rest.user.email}
-        >
-          {rest.user.name}
-        </span>
-      )}
-      <ThemeAndLogout {...rest} />
-    </div>
-  )
-}
+}) => (
+  <div className="hidden lg:flex items-center justify-between gap-4 pb-8">
+    {activeTab === 'converter' ? (
+      <ConversionSteps state={conversionState} />
+    ) : (
+      <span className="text-muted text-sm font-medium">{TAB_TITLES[activeTab]}</span>
+    )}
+    <ThemeAndLogout {...rest} />
+  </div>
+)
 
 /* ------------------------------- Mobile ------------------------------- */
 
@@ -263,7 +308,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   ...rest
 }) => (
   <header className="lg:hidden flex items-center justify-between gap-3 px-1 pt-4 pb-5">
-    <Brand size="md" onClick={() => onSelectTab('converter')} />
+    <Brand onClick={() => onSelectTab('converter')} />
     <ThemeAndLogout {...rest} />
   </header>
 )
@@ -285,7 +330,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({
   return (
     <nav
       aria-label="Navegação móvel"
-      className="glass glass-rim glass-glow lg:hidden fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-stretch justify-around rounded-[32px] p-2"
+      className="lg:hidden fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-[var(--border)] bg-[var(--surface)] px-2 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:bg-[#0D100E]"
     >
       {navItems.map((item) => {
         const active = activeTab === item.id
@@ -295,25 +340,22 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({
             type="button"
             onClick={() => onSelectTab(item.id)}
             aria-current={active ? 'page' : undefined}
-            className={`relative flex flex-1 flex-col items-center justify-center gap-1 rounded-[26px] py-2.5 text-[13px] font-medium transition-colors cursor-pointer ${focusRing} ${
-              active ? 'glass-soft text-accent' : 'text-muted'
+            className={`relative flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-xl text-xs transition-colors cursor-pointer ${focusRing} ${
+              active ? 'text-accent font-semibold' : 'text-muted font-medium'
             }`}
           >
             <span className="relative">
-              <NavIcon id={item.id} variant="tab" />
+              <NavIcon id={item.id} />
               {item.badge !== undefined && (
-                <span className="absolute -top-2 -right-3 min-w-5 rounded-full bg-[#BCEE45] px-1.5 text-center font-mono text-[11px] font-bold leading-5 text-[#111315]">
+                <span className="absolute -top-1.5 -right-3 min-w-5 rounded-full bg-[var(--accent)] px-1.5 text-center font-mono text-[11px] font-bold leading-5 text-[#0A0C0B]">
                   {item.badge}
                 </span>
               )}
               {item.id === 'converter' && isConverting && (
-                <span className="absolute -top-1 -right-2 h-2 w-2 animate-pulse rounded-full bg-[#BCEE45]" />
+                <span className="absolute -top-1 -right-2 h-2 w-2 animate-pulse rounded-full bg-[var(--accent)]" />
               )}
             </span>
-            <span>{item.label}</span>
-            {active && (
-              <span className="absolute bottom-1 h-1 w-6 rounded-full bg-[#BCEE45] shadow-[0_0_8px_#BCEE45]" />
-            )}
+            <span>{item.label === 'Configurações' ? 'Ajustes' : item.label}</span>
           </button>
         )
       })}
