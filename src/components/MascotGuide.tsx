@@ -1,92 +1,27 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  Disc3,
-  Heart,
-  Headphones,
-  MessageCircleHeart,
-  Minus,
-  Move,
-  Music,
-  Scissors,
-  Search,
-  Sparkles,
-  Upload,
-  Volume2,
-  Wand2,
-} from 'lucide-react'
+import React, { useState } from 'react'
+import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import type {
   ActiveTab,
   ConversionConfig,
   ConversionState,
   MascotMood,
-  MascotPosition,
   VideoMetadata,
 } from '../types/sonora'
 import { formatDuration } from '../utils/formatters'
 import { loadMascotPrefs, saveMascotPrefs } from '../services/storageService'
+import { Capybara } from './Capybara'
 
-// Distância mínima (px) para um toque virar arraste em vez de clique
-const DRAG_THRESHOLD_PX = 6
-const VIEWPORT_MARGIN_PX = 8
-// Abaixo dessa altura do topo, o balão abre embaixo da capivara
-const BUBBLE_FLIP_TOP_PX = 280
-const KEYBOARD_STEP_PX = 16
-// Quanto do caminho até o ponteiro a capivara percorre por frame (0–1)
-const GLIDE_FOLLOW = 0.22
-const MAX_TILT_DEG = 14
-
-// Ao pegar: cresce um pouco e ganha sombra; ao soltar: assenta com leve quique
-function liftStyle(isLifted: boolean): React.CSSProperties {
-  return {
-    transform: `scale(${isLifted ? 1.08 : 1}) rotate(var(--mascot-tilt, 0deg))`,
-    transformOrigin: '50% 85%',
-    filter: isLifted
-      ? 'drop-shadow(0 16px 14px rgba(0, 0, 0, 0.28))'
-      : 'drop-shadow(0 0 0 rgba(0, 0, 0, 0))',
-    transition: isLifted
-      ? 'transform 180ms ease-out, filter 220ms ease-out'
-      : 'transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 320ms ease-out',
-    willChange: 'transform',
-  }
-}
-
-function clampToViewport(
-  pos: MascotPosition,
-  width: number,
-  height: number
-): MascotPosition {
-  const maxX = Math.max(
-    VIEWPORT_MARGIN_PX,
-    window.innerWidth - width - VIEWPORT_MARGIN_PX
-  )
-  const maxY = Math.max(
-    VIEWPORT_MARGIN_PX,
-    window.innerHeight - height - VIEWPORT_MARGIN_PX
-  )
-  return {
-    x: Math.round(Math.min(Math.max(pos.x, VIEWPORT_MARGIN_PX), maxX)),
-    y: Math.round(Math.min(Math.max(pos.y, VIEWPORT_MARGIN_PX), maxY)),
-  }
-}
-
-interface DragSession {
-  pointerId: number
-  startX: number
-  startY: number
-  originX: number
-  originY: number
-  width: number
-  height: number
-  moved: boolean
+interface Dialogue {
+  eyebrow: string
+  title: string
+  description: string
 }
 
 interface MascotGuideProps {
+  /** Onde o cartão aparece: barra lateral (computador) ou faixa (celular) */
+  variant: 'sidebar' | 'mobile'
   state: ConversionState
   activeTab?: ActiveTab
-  theme: 'light' | 'dark'
   progressPercent?: number
   progressStage: string
   isDraggingFile?: boolean
@@ -94,65 +29,38 @@ interface MascotGuideProps {
   config?: ConversionConfig
   video?: VideoMetadata | null
   historyCount?: number
-  customReaction?: {
-    mood: MascotMood
-    eyebrow: string
-    title: string
-    description: string
-  } | null
-  // Increment to open the speech bubble (e.g. "Falar com a Capivara" button)
-  talkRequest?: number
+  customReaction?: ({ mood: MascotMood } & Dialogue) | null
 }
 
-interface StudioTip {
-  eyebrow: string
-  title: string
-  description: string
-  pose: string
-}
-
-const STUDIO_TIPS: StudioTip[] = [
+const STUDIO_TIPS: Dialogue[] = [
   {
-    eyebrow: 'Dica da Capivara Produtora',
-    title: 'Quer qualidade de estúdio sem ocupar espaço?',
+    eyebrow: 'Dica',
+    title: 'MP3 a 192 kbps é o equilíbrio ideal.',
     description:
-      'O formato MP3 em 320 kbps ou M4A entrega fidelidade altíssima com um arquivo super leve!',
-    pose: '/mascote/pose-peace.png',
+      'Leve para o celular e com som limpo. Para editar em estúdio, prefira WAV, que não perde qualidade.',
   },
   {
-    eyebrow: 'Segredo de Estúdio',
+    eyebrow: 'Dica',
     title: 'Volume baixo no vídeo original?',
     description:
-      'Abra as Configurações Avançadas e ative "Normalizar volume (-16 LUFS)" para deixar o som equilibrado igual ao Spotify.',
-    pose: '/mascote/pose-laptop.png',
+      'Nas configurações avançadas, ligue "Normalizar volume (-16 LUFS)" para deixar o som equilibrado.',
   },
   {
-    eyebrow: 'Atalho Rápido',
-    title: 'Sabia que você pode cortar só o refrão?',
+    eyebrow: 'Atalho',
+    title: 'Dá para cortar só o refrão.',
     description:
-      'Nas Configurações Avançadas você escolhe o segundo exato de início e fim antes mesmo de converter!',
-    pose: '/mascote/pose-waveform.png',
+      'Nas configurações avançadas você escolhe o segundo exato de início e fim antes de converter.',
   },
   {
-    eyebrow: 'Privacidade Total',
-    title: 'Seus arquivos nunca saem do seu controle!',
+    eyebrow: 'Privacidade',
+    title: 'Nada fica guardado no servidor.',
     description:
-      'Aqui no SONORA tudo roda localmente com zero rastreamento. Até eu fico de fone fechado para proteger seus dados!',
-    pose: '/mascote/pose-confident.png',
+      'Quando o servidor ajuda na conversão, o arquivo é apagado assim que o áudio fica pronto. O histórico fica só no seu navegador.',
   },
   {
-    eyebrow: 'Carinho Recebido ♥',
-    title: 'Paz, amor e 320 kbps!',
-    description:
-      'Obrigado pelo carinho! Estou no canto da tela acompanhando cada clique seu no estúdio.',
-    pose: '/mascote/pose-zen.png',
-  },
-  {
-    eyebrow: 'Modo Festa no SONORA',
-    title: 'Solta o som que eu danço junto!',
-    description:
-      'Sempre que você der Play na prévia do áudio ou no histórico, eu entro no ritmo aqui no cantinho!',
-    pose: '/mascote/pose-dance.png',
+    eyebrow: 'Atalho',
+    title: 'Mudou de ideia no meio da conversão?',
+    description: 'Aperte Esc para cancelar. Seu vídeo continua carregado.',
   },
 ]
 
@@ -160,12 +68,7 @@ function computeConfigReaction(
   state: ConversionState,
   config?: ConversionConfig,
   video?: VideoMetadata | null
-): {
-  mood: MascotMood
-  eyebrow: string
-  title: string
-  description: string
-} | null {
+): ({ mood: MascotMood } & Dialogue) | null {
   if (state !== 'loaded' || !config || !video) return null
 
   const isTrimmed =
@@ -176,83 +79,70 @@ function computeConfigReaction(
     const cutDuration = Math.max(0.5, config.endTime - config.startTime)
     return {
       mood: 'trimming',
-      eyebrow: 'Tesoura de ouro ativada',
-      title: `Recorte ajustado para ${formatDuration(cutDuration)}!`,
-      description: `Vou extrair apenas o trecho de ${formatDuration(config.startTime)} até ${formatDuration(config.endTime)} com precisão cirúrgica.`,
+      eyebrow: 'Corte ajustado',
+      title: `Vou extrair ${formatDuration(cutDuration)} de áudio.`,
+      description: `Só o trecho de ${formatDuration(config.startTime)} até ${formatDuration(config.endTime)}.`,
     }
   }
 
   if (!config.preserveOriginal && config.normalize) {
     return {
       mood: 'tuning',
-      eyebrow: 'Masterização ativa',
-      title: 'Normalização de estúdio (-16 LUFS) ligada!',
-      description:
-        'Ótima escolha! Vou equilibrar os picos baixos e altos para o áudio soar limpo e uniforme.',
+      eyebrow: 'Normalização ligada',
+      title: 'Volume de estúdio (-16 LUFS).',
+      description: 'Vou equilibrar as partes baixas e altas para o som ficar uniforme.',
     }
   }
 
   if (!config.preserveOriginal && config.volume !== 100) {
     return {
       mood: 'tuning',
-      eyebrow: 'Ajuste de ganho',
+      eyebrow: 'Ajuste de volume',
       title:
         config.volume > 100
-          ? `Turbinando o volume em ${config.volume}%!`
-          : `Suavizando o volume para ${config.volume}%`,
+          ? `Volume em ${config.volume}%.`
+          : `Volume suavizado para ${config.volume}%.`,
       description:
         config.volume > 100
-          ? 'Vou amplificar o sinal cuidando para evitar distorções.'
-          : 'O áudio sairá mais suave e confortável para ouvir.',
+          ? 'Vou aumentar o som tomando cuidado para não distorcer.'
+          : 'O áudio vai sair mais baixo e confortável de ouvir.',
     }
   }
 
-  const formatMessages: Record<
-    string,
-    { eyebrow: string; title: string; description: string }
-  > = {
+  const formatMessages: Record<string, Dialogue> = {
     mp3: {
-      eyebrow: `MP3 • ${config.bitrate} kbps`,
-      title: 'O clássico que toca em qualquer lugar!',
+      eyebrow: `MP3 · ${config.bitrate} kbps`,
+      title: 'O clássico que toca em qualquer lugar.',
       description:
         config.bitrate === 320
-          ? 'Em 320 kbps você leva a fidelidade máxima do MP3. Pronto para converter!'
-          : `Configurado em ${config.bitrate} kbps para ótimo equilíbrio entre leveza e nitidez.`,
+          ? 'Em 320 kbps é a melhor qualidade que o MP3 oferece.'
+          : `Em ${config.bitrate} kbps o arquivo fica leve e com som nítido.`,
     },
     wav: {
-      eyebrow: 'WAV • PCM 16-bit Puro',
-      title: 'Qualidade de estúdio sem compressão!',
-      description:
-        'Cada amostra sonora será preservada intacta em 44.1 kHz. Ideal para edição profissional!',
+      eyebrow: 'WAV · sem perdas',
+      title: 'Qualidade de estúdio, sem compressão.',
+      description: 'Ideal para editar. O arquivo fica bem maior que um MP3.',
     },
     m4a: {
-      eyebrow: `M4A • ${config.bitrate} kbps`,
-      title: 'Eficiência moderna para Apple e Web!',
-      description:
-        'O contêiner M4A entrega graves e agudos cristalinos ocupando menos espaço que o MP3.',
+      eyebrow: `M4A · ${config.bitrate} kbps`,
+      title: 'Leve e com ótima fidelidade.',
+      description: 'Ótimo para iPhone e Mac, ocupando menos espaço que o MP3.',
     },
     aac: {
-      eyebrow: `AAC • ${config.bitrate} kbps`,
-      title: 'Áudio ágil e cristalino!',
-      description:
-        'Excelente para streaming e players modernos com compressão inteligente.',
+      eyebrow: `AAC · ${config.bitrate} kbps`,
+      title: 'Compacto e cristalino.',
+      description: 'Ótimo para players modernos e redes sociais.',
     },
   }
 
-  if (formatMessages[config.format]) {
-    return {
-      mood: 'loaded',
-      ...formatMessages[config.format],
-    }
-  }
-
-  return null
+  const message = formatMessages[config.format]
+  return message ? { mood: 'loaded', ...message } : null
 }
 
 export const MascotGuide: React.FC<MascotGuideProps> = ({
+  variant,
   state,
   activeTab = 'converter',
-  theme,
   progressPercent = 0,
   progressStage,
   isDraggingFile = false,
@@ -261,966 +151,282 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
   video,
   historyCount = 0,
   customReaction,
-  talkRequest = 0,
 }) => {
-  const isDark = theme === 'dark'
-  const [isPopping, setIsPopping] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
-  const currentEventKey = `${activeTab}:${state}:${isDraggingFile ? 'drag' : ''}:${isAudioPlaying ? 'play' : ''}:${customReaction?.title || ''}:${talkRequest}`
-  const [dismissedEventKey, setDismissedEventKey] = useState<string | null>(
-    () => currentEventKey
+  const [isCollapsed, setIsCollapsed] = useState(
+    () => loadMascotPrefs().minimized
   )
-  const [petCount, setPetCount] = useState(0)
-  const [tipSelection, setTipSelection] = useState<{
-    forState: ConversionState
-    forTab: ActiveTab
-    index: number
-  } | null>(null)
+  // No celular a faixa começa fechada (só uma linha)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [tip, setTip] = useState<{ key: string; index: number } | null>(null)
 
-  const [initialPrefs] = useState(loadMascotPrefs)
-  const [isMinimized, setIsMinimized] = useState(initialPrefs.minimized)
-  const [position, setPosition] = useState<MascotPosition | null>(
-    initialPrefs.position
-  )
-  const [isDragging, setIsDragging] = useState(false)
-  const asideRef = useRef<HTMLElement | null>(null)
-  const liftRef = useRef<HTMLDivElement | null>(null)
-  const dragRef = useRef<DragSession | null>(null)
-  const suppressClickRef = useRef(false)
-  // Movimento suave: a capivara persegue o alvo com inércia a cada frame,
-  // escrevendo direto no DOM (sem re-render) e salvando no estado ao parar.
-  const glideRef = useRef<{
-    live: MascotPosition
-    target: MascotPosition
-    tilt: number
-    lastTime: number
-    frame: number | null
-  } | null>(null)
+  // A dica só vale para a etapa em que foi pedida
+  const contextKey = `${activeTab}:${state}`
+  const activeTip = tip && tip.key === contextKey ? STUDIO_TIPS[tip.index] : null
 
-  useEffect(() => {
-    return () => {
-      const frame = glideRef.current?.frame
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [])
-
-  const prefersReducedMotion = () =>
-    Boolean(asideRef.current?.closest('.motion-reduce')) ||
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-  const runGlideFrame = (now: number) => {
-    const glide = glideRef.current
-    const el = asideRef.current
-    if (!glide || !el) return
-
-    // Fator de suavização independente da taxa de quadros (~60 fps = 0.22)
-    const dt = Math.min(64, now - glide.lastTime || 16.7)
-    glide.lastTime = now
-    const follow = prefersReducedMotion()
-      ? 1
-      : 1 - Math.pow(1 - GLIDE_FOLLOW, dt / 16.7)
-
-    const prevX = glide.live.x
-    glide.live = {
-      x: glide.live.x + (glide.target.x - glide.live.x) * follow,
-      y: glide.live.y + (glide.target.y - glide.live.y) * follow,
-    }
-
-    // Inclina na direção do movimento, como se estivesse sendo carregada
-    const velocityX = (glide.live.x - prevX) / (dt / 16.7)
-    const targetTilt = dragRef.current?.moved
-      ? Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, velocityX * 0.9))
-      : 0
-    glide.tilt += (targetTilt - glide.tilt) * 0.25
-
-    el.style.bottom = 'auto'
-    el.style.left = `${glide.live.x}px`
-    el.style.top = `${glide.live.y}px`
-    liftRef.current?.style.setProperty(
-      '--mascot-tilt',
-      `${glide.tilt.toFixed(2)}deg`
-    )
-
-    const distance = Math.hypot(
-      glide.target.x - glide.live.x,
-      glide.target.y - glide.live.y
-    )
-    const settled =
-      !dragRef.current?.moved && distance < 0.5 && Math.abs(glide.tilt) < 0.1
-
-    if (settled) {
-      const finalPos = {
-        x: Math.round(glide.target.x),
-        y: Math.round(glide.target.y),
-      }
-      el.style.left = `${finalPos.x}px`
-      el.style.top = `${finalPos.y}px`
-      liftRef.current?.style.setProperty('--mascot-tilt', '0deg')
-      glideRef.current = null
-      setPosition(finalPos)
-      return
-    }
-
-    glide.frame = requestAnimationFrame(runGlideFrame)
+  const showNextTip = () => {
+    setTip((prev) => ({
+      key: contextKey,
+      index:
+        prev && prev.key === contextKey
+          ? (prev.index + 1) % STUDIO_TIPS.length
+          : 0,
+    }))
   }
 
-  const glideTo = (target: MascotPosition, from: MascotPosition) => {
-    if (glideRef.current) {
-      glideRef.current.target = target
-      return
-    }
-    glideRef.current = {
-      live: from,
-      target,
-      tilt: 0,
-      lastTime: performance.now(),
-      frame: requestAnimationFrame(runGlideFrame),
-    }
-    // Sai da posição padrão (definida por classes CSS) para left/top explícitos
-    if (!position) setPosition(from)
+  const setCollapsed = (value: boolean) => {
+    setIsCollapsed(value)
+    saveMascotPrefs({ minimized: value, position: null })
   }
-
-  // "Falar com a Capivara" na navbar traz a mascote de volta se estiver minimizada
-  const [lastTalkRequest, setLastTalkRequest] = useState(talkRequest)
-  if (talkRequest !== lastTalkRequest) {
-    setLastTalkRequest(talkRequest)
-    if (isMinimized) setIsMinimized(false)
-  }
-
-  // Salva preferências quando não está no meio de um arraste
-  useEffect(() => {
-    if (isDragging) return
-    saveMascotPrefs({ minimized: isMinimized, position })
-  }, [isMinimized, position, isDragging])
-
-  // Mantém a capivara dentro da tela ao trocar de tamanho (minimizar/expandir)
-  useLayoutEffect(() => {
-    const el = asideRef.current
-    if (!el || !position) return
-    const rect = el.getBoundingClientRect()
-    const clamped = clampToViewport(position, rect.width, rect.height)
-    if (clamped.x !== position.x || clamped.y !== position.y) {
-      setPosition(clamped)
-    }
-  }, [isMinimized, position])
-
-  // ...e ao redimensionar a janela
-  useEffect(() => {
-    const handleResize = () => {
-      const el = asideRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      setPosition((current) =>
-        current ? clampToViewport(current, rect.width, rect.height) : current
-      )
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return
-    const el = asideRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    suppressClickRef.current = false
-    dragRef.current = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      originX: rect.left,
-      originY: rect.top,
-      width: rect.width,
-      height: rect.height,
-      moved: false,
-    }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== e.pointerId) return
-    const dx = e.clientX - drag.startX
-    const dy = e.clientY - drag.startY
-    if (!drag.moved) {
-      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return
-      drag.moved = true
-      setIsDragging(true)
-    }
-    glideTo(
-      clampToViewport(
-        { x: drag.originX + dx, y: drag.originY + dy },
-        drag.width,
-        drag.height
-      ),
-      { x: drag.originX, y: drag.originY }
-    )
-  }
-
-  const handlePointerEnd = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== e.pointerId) return
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    }
-    // Um arraste não deve contar como clique na capivara
-    if (drag.moved) suppressClickRef.current = true
-    dragRef.current = null
-    setIsDragging(false)
-  }
-
-  // Setas do teclado movem a capivara (Shift = passo maior)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    const deltas: Record<string, [number, number]> = {
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0],
-    }
-    const delta = deltas[e.key]
-    const el = asideRef.current
-    if (!delta || !el) return
-    e.preventDefault()
-    const rect = el.getBoundingClientRect()
-    const step = e.shiftKey ? KEYBOARD_STEP_PX * 4 : KEYBOARD_STEP_PX
-    // Acumula sobre o alvo atual para teclas repetidas não "perderem" passos
-    const base = glideRef.current?.target ?? { x: rect.left, y: rect.top }
-    glideTo(
-      clampToViewport(
-        { x: base.x + delta[0] * step, y: base.y + delta[1] * step },
-        rect.width,
-        rect.height
-      ),
-      { x: rect.left, y: rect.top }
-    )
-  }
-
-  const consumeSuppressedClick = () => {
-    if (!suppressClickRef.current) return false
-    suppressClickRef.current = false
-    return true
-  }
-
-  const handleMinimize = () => {
-    setIsMinimized(true)
-    setIsHovered(false)
-  }
-
-  const handleExpand = () => {
-    if (consumeSuppressedClick()) return
-    setIsMinimized(false)
-    setDismissedEventKey(null)
-  }
-
-  // Durante o arraste o balão só fica transparente (some e volta com fade)
-  const isBubbleOpen = !isMinimized && dismissedEventKey !== currentEventKey
-
-  // Balão abre para o lado com mais espaço
-  const bubbleBelow = position !== null && position.y < BUBBLE_FLIP_TOP_PX
-  const bubbleAlignRight =
-    position !== null && position.x + 64 > window.innerWidth / 2
-
-  const activeTipIndex =
-    tipSelection &&
-    tipSelection.forState === state &&
-    tipSelection.forTab === activeTab
-      ? tipSelection.index
-      : null
 
   const configReaction = computeConfigReaction(state, config, video)
 
-  const handleInteractMascot = () => {
-    if (consumeSuppressedClick()) return
-    setDismissedEventKey(null)
-    setIsPopping(true)
-    setPetCount((prev) => prev + 1)
-    setTipSelection((prev) => {
-      const nextIndex =
-        prev && prev.forState === state && prev.forTab === activeTab
-          ? (prev.index + 1) % STUDIO_TIPS.length
-          : 0
-      return { forState: state, forTab: activeTab, index: nextIndex }
-    })
-    window.setTimeout(() => {
-      setIsPopping(false)
-    }, 560)
-  }
-
-  // Determine current mood
-  const resolveMood = (): MascotMood => {
-    if (activeTipIndex !== null) return 'petted'
-    if (customReaction) return customReaction.mood
+  const mood: MascotMood = (() => {
+    if (activeTip) return 'petted'
     if (isDraggingFile) return 'dragging'
-    if (isAudioPlaying) return 'grooving'
     if (state === 'converting') return 'converting'
     if (state === 'validating') return 'validating'
-    if (state === 'success') return 'success'
     if (state === 'error') return 'error'
-    if (activeTab === 'converter' && state === 'loaded' && configReaction) {
-      return configReaction.mood
+    if (customReaction) return customReaction.mood
+    if (isAudioPlaying) return 'grooving'
+    if (state === 'success') return 'success'
+    if (activeTab === 'converter' && state === 'loaded') {
+      return configReaction?.mood ?? 'loaded'
     }
-    if (activeTab === 'converter' && state === 'loaded') return 'loaded'
     return 'idle'
-  }
+  })()
 
-  const mood = resolveMood()
-
-  // Map current mood, stage, tab, and hover state to the processed capybara PNGs in /mascote/
-  const resolveMascotImage = (): string => {
-    if (activeTipIndex !== null) {
-      return STUDIO_TIPS[activeTipIndex].pose
-    }
-
-    if (isDraggingFile || mood === 'dragging') {
-      return '/mascote/pose-welcome.png'
-    }
-
-    if (isAudioPlaying || mood === 'grooving') {
-      return isHovered ? '/mascote/pose-music.png' : '/mascote/pose-dance.png'
-    }
-
-    if (state === 'validating' || mood === 'validating') {
-      return '/mascote/pose-curious.png'
-    }
-
-    if (state === 'converting' || mood === 'converting') {
-      if (progressPercent < 18) {
-        return '/mascote/pose-laptop.png'
+  const dialogue: Dialogue = (() => {
+    if (activeTip) return activeTip
+    if (isDraggingFile) {
+      return {
+        eyebrow: 'Pode soltar!',
+        title: 'Solte o vídeo em qualquer lugar da tela.',
+        description: 'Eu confiro o arquivo na hora.',
       }
-      if (progressPercent >= 88) {
-        return '/mascote/pose-waveform.png'
+    }
+    if (state === 'validating') {
+      return {
+        eyebrow: 'Analisando',
+        title: 'Deixa eu dar uma olhadinha…',
+        description: 'Conferindo duração, resolução e se o vídeo tem som.',
       }
-      return '/mascote/capy-converting.png'
     }
-
-    if (state === 'error' || mood === 'error') {
-      return '/mascote/pose-surprised.png'
+    if (state === 'converting') {
+      const stage =
+        progressPercent < 32
+          ? 'Preparando o estúdio…'
+          : progressPercent < 78
+            ? 'Capturando cada nota no capricho…'
+            : 'Dando o polimento final…'
+      return {
+        eyebrow: `Convertendo · ${progressPercent}%`,
+        title: stage,
+        description: `${progressStage || 'Aplicando suas configurações.'} Aperte Esc para cancelar.`,
+      }
     }
-
-    if (state === 'success' || mood === 'success') {
-      return isHovered ? '/mascote/pose-cheer.png' : '/mascote/capy-success.png'
+    if (state === 'error') {
+      return {
+        eyebrow: 'Ops',
+        title: 'Esse arquivo tropeçou.',
+        description: 'Tente outro vídeo que tenha som, ou use o vídeo de exemplo.',
+      }
     }
-
-    if (customReaction?.mood === 'petted') {
-      return '/mascote/pose-zen.png'
+    if (customReaction) return customReaction
+    if (isAudioPlaying) {
+      return {
+        eyebrow: 'Curtindo o som',
+        title: 'Que som limpinho!',
+        description: 'Clique na forma de onda para pular para qualquer parte.',
+      }
     }
-
-    if (activeTab === 'configuracoes') {
-      return isHovered
-        ? '/mascote/pose-thumbsup.png'
-        : '/mascote/pose-laptop.png'
+    if (state === 'success' && activeTab === 'converter') {
+      return {
+        eyebrow: 'Pronto!',
+        title: 'Seu áudio saiu do estúdio.',
+        description: 'Dê o play para ouvir ou baixe agora. Uma cópia fica no Histórico.',
+      }
     }
-
     if (activeTab === 'historico') {
-      if (historyCount > 0) {
-        return isHovered
-          ? '/mascote/pose-dance.png'
-          : '/mascote/pose-music.png'
+      return {
+        eyebrow: 'Histórico',
+        title:
+          historyCount > 0
+            ? `${historyCount} ${historyCount === 1 ? 'áudio salvo' : 'áudios salvos'} neste navegador.`
+            : 'Ainda não tem nada aqui.',
+        description:
+          historyCount > 0
+            ? 'Ouça ou baixe de novo quando quiser.'
+            : 'Seus áudios convertidos aparecem aqui, guardados só no seu navegador.',
       }
-      return isHovered ? '/mascote/pose-wave.png' : '/mascote/pose-think.png'
     }
-
-    if (mood === 'trimming') {
-      return '/mascote/pose-waveform.png'
-    }
-
-    if (mood === 'tuning') {
-      return '/mascote/pose-laptop.png'
-    }
-
-    if (state === 'loaded' || mood === 'loaded') {
-      if (config?.format === 'wav') {
-        return '/mascote/pose-confident.png'
+    if (activeTab === 'configuracoes') {
+      return {
+        eyebrow: 'Configurações',
+        title: 'Deixe o SONORA do seu jeito.',
+        description: 'Escolha o formato padrão, a qualidade e onde a conversão acontece.',
       }
-      return isHovered
-        ? '/mascote/pose-cheer.png'
-        : '/mascote/pose-thumbsup.png'
     }
-
-    // Idle on converter tab
-    if (isHovered) {
-      return '/mascote/pose-peace.png'
+    if (state === 'loaded' && configReaction) return configReaction
+    if (state === 'loaded') {
+      return {
+        eyebrow: 'Vídeo carregado',
+        title: 'Como você quer o seu áudio?',
+        description: 'Escolha o formato. Nas opções avançadas dá para cortar e normalizar.',
+      }
     }
-    return '/mascote/capy-hello.png'
-  }
-
-  const mascotImageSrc = resolveMascotImage()
-
-  const animationClass = (() => {
-    if (isPopping) return 'mascot-pop'
-    switch (mood) {
-      case 'dragging':
-        return 'mascot-excited'
-      case 'validating':
-        return 'mascot-inspect'
-      case 'converting':
-      case 'grooving':
-        return 'mascot-groove'
-      case 'success':
-      case 'petted':
-        return 'mascot-celebrate'
-      case 'error':
-        return 'mascot-wobble'
-      case 'trimming':
-      case 'tuning':
-        return 'mascot-excited'
-      default:
-        return 'mascot-float'
+    return {
+      eyebrow: 'Capivara',
+      title: 'Oi! Solte um vídeo que eu cuido do resto.',
+      description: 'Clique em mim quando quiser uma dica.',
     }
   })()
 
-  // Resolve contextual dialogue
-  const resolveDialogue = (): {
-    eyebrow: string
-    title: string
-    description: string
-  } => {
-    if (activeTipIndex !== null) {
-      return STUDIO_TIPS[activeTipIndex]
-    }
+  const isConverting = state === 'converting'
+  const ringPercent = Math.max(0, Math.min(100, progressPercent))
+  const dialogueKey = `${dialogue.eyebrow}|${dialogue.title}`
 
-    if (customReaction) {
-      return customReaction
-    }
+  const avatar = (size: number, ring: number) => (
+    <span
+      className="relative flex shrink-0 items-center justify-center rounded-full"
+      style={{
+        width: size + ring * 2,
+        height: size + ring * 2,
+        background: isConverting
+          ? `conic-gradient(var(--accent) ${ringPercent}%, var(--border-strong) 0)`
+          : 'transparent',
+      }}
+    >
+      <span
+        className="flex items-center justify-center overflow-hidden rounded-full bg-[var(--surface-3)]"
+        style={{ width: size, height: size }}
+      >
+        <Capybara mood={mood} size={Math.round(size * 0.92)} />
+      </span>
+    </span>
+  )
 
-    if (isDraggingFile) {
-      return {
-        eyebrow: 'Solte o arquivo!',
-        title: 'Opa! Pode soltar esse vídeo aqui na tela!',
-        description:
-          'Já estou de braços abertos para inspecionar a faixa de áudio na hora.',
-      }
-    }
-
-    if (isAudioPlaying) {
-      return {
-        eyebrow: 'Curtindo o som ♪',
-        title: 'Que som limpinho! Ficou bom demais!',
-        description:
-          'Use a forma de onda para navegar pela faixa ou mude a velocidade de reprodução.',
-      }
-    }
-
-    if (state === 'validating') {
-      return {
-        eyebrow: 'Inspecionando vídeo',
-        title: 'Deixa eu dar uma olhadinha nesse arquivo…',
-        description:
-          'Conferindo duração, resolução e trilha sonora para preparar o estúdio.',
-      }
-    }
-
-    if (state === 'converting') {
-      if (progressPercent < 32) {
-        return {
-          eyebrow: `Convertendo • ${progressPercent}%`,
-          title: 'Aquecendo os motores do estúdio…',
-          description:
-            progressStage ||
-            'Lendo o vídeo e separando a trilha sonora original sem perder nenhum detalhe.',
-        }
-      }
-      if (progressPercent < 78) {
-        return {
-          eyebrow: `Extraindo áudio • ${progressPercent}%`,
-          title: 'Capturando cada nota musical no capricho!',
-          description:
-            progressStage ||
-            'Processando as frequências e aplicando suas configurações de qualidade.',
-        }
-      }
-      return {
-        eyebrow: `Quase pronto • ${progressPercent}%`,
-        title: 'Dando aquele polimento final nos decibéis!',
-        description:
-          progressStage ||
-          'Gerando a forma de onda interativa para você ouvir e baixar.',
-      }
-    }
-
-    if (state === 'success' && activeTab === 'converter') {
-      return {
-        eyebrow: 'Missão cumprida!',
-        title: 'Prontinho! Seu áudio saiu fresquinho do estúdio!',
-        description:
-          'Aperte o Play para a gente ouvir juntos na forma de onda ou clique em Baixar Áudio.',
-      }
-    }
-
-    if (state === 'error' && activeTab === 'converter') {
-      return {
-        eyebrow: 'Ops, algo tropeçou',
-        title: 'Não consegui extrair o áudio desse arquivo.',
-        description:
-          'Tente outro vídeo com faixa de áudio ativa ou teste com o vídeo de demonstração.',
-      }
-    }
-
-    if (activeTab === 'historico') {
-      return {
-        eyebrow: 'Guardiã da Biblioteca',
-        title:
-          historyCount > 0
-            ? `Você tem ${historyCount} ${historyCount === 1 ? 'áudio salvo' : 'áudios salvos'} no navegador!`
-            : 'Sua biblioteca local ainda está vazia.',
-        description:
-          historyCount > 0
-            ? 'Clique em "Ouvir" em qualquer faixa para a gente curtir o som juntos!'
-            : 'Converta seu primeiro vídeo para ele aparecer salvo aqui com total privacidade.',
-      }
-    }
-
-    if (activeTab === 'configuracoes') {
-      return {
-        eyebrow: 'Engenharia do Estúdio',
-        title: 'Deixe o SONORA do seu jeito!',
-        description:
-          'Ajuste formato padrão, qualidade preferida e modo de processamento local.',
-      }
-    }
-
-    if (state === 'loaded' && configReaction) {
-      return configReaction
-    }
-
-    if (state === 'loaded') {
-      return {
-        eyebrow: 'Vídeo aprovado!',
-        title: 'Tudo pronto! Como você quer o seu áudio?',
-        description:
-          'Escolha o formato ou abra as opções avançadas para cortar trechos e normalizar o som.',
-      }
-    }
-
-    return {
-      eyebrow: 'Capivara do SONORA',
-      title: 'Oi! Estou aqui no cantinho para ajudar.',
-      description:
-        'Arraste um vídeo na página ou clique em mim para trocar de pose e receber dicas de estúdio!',
-    }
-  }
-
-  const dialogue = resolveDialogue()
-  const showMusicalNotes =
-    mood === 'converting' ||
-    mood === 'grooving' ||
-    mood === 'success' ||
-    isPopping ||
-    isHovered
-
-  // Mood badge icon on the corner of the mascot avatar
-  const renderMoodBadge = () => {
-    switch (mood) {
-      case 'dragging':
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'validating':
-        return (
-          <span className="bg-amber-400 text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Search className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'converting':
-      case 'grooving':
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Headphones className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'trimming':
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Scissors className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'tuning':
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Volume2 className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'success':
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'error':
-        return (
-          <span className="bg-red-500 text-white inline-flex p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
-            <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5]" />
-          </span>
-        )
-      case 'petted':
-        return (
-          <span className="bg-pink-500 text-white inline-flex p-1.5 rounded-full shadow-md border-2 border-white dark:border-[#111315]">
-            <Heart className="w-3.5 h-3.5 fill-current" />
-          </span>
-        )
-      default:
-        return (
-          <span className="bg-[#BCEE45] text-[#111315] inline-flex p-1.5 rounded-full shadow-md border-2 border-[#111315]">
-            <Sparkles className="w-3.5 h-3.5 stroke-[2.4]" />
-          </span>
-        )
-    }
-  }
-
-  const dragHandlers = {
-    onPointerDown: handlePointerDown,
-    onPointerMove: handlePointerMove,
-    onPointerUp: handlePointerEnd,
-    onPointerCancel: handlePointerEnd,
-    onKeyDown: handleKeyDown,
-  }
-
-  const asideClassName = `fixed z-[45] pointer-events-none select-none ${
-    position ? '' : 'left-1 bottom-[5.6rem] lg:left-6 lg:bottom-[7rem]'
-  }`
-  const asideStyle = position
-    ? { left: position.x, top: position.y }
-    : undefined
-
-  if (isMinimized) {
-    const ringPercent = Math.max(0, Math.min(100, progressPercent))
-    const ringTrack = isDark ? '#2A302C' : '#E5E7EB'
+  /* ------------------------------ Celular ------------------------------ */
+  if (variant === 'mobile') {
     return (
       <aside
-        ref={asideRef}
-        aria-label="Assistente mascote Capivara do SONORA (minimizada)"
-        className={asideClassName}
-        style={asideStyle}
+        aria-label="Dicas da Capivara"
+        className="lg:hidden fixed inset-x-2 z-30 bottom-[calc(76px+env(safe-area-inset-bottom))] mx-auto max-w-xl rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
       >
-        <div
-          ref={liftRef}
-          className="pointer-events-auto relative rounded-full p-[3px] shadow-lg"
-          style={{
-            ...liftStyle(isDragging),
-            background:
-              state === 'converting'
-                ? `conic-gradient(#BCEE45 ${ringPercent}%, ${ringTrack} 0)`
-                : ringTrack,
-          }}
-        >
+        <div className="flex items-center gap-3 px-2.5 py-2">
           <button
             type="button"
-            {...dragHandlers}
-            onClick={handleExpand}
-            title="Abrir a capivara (segure e arraste para mover)"
-            aria-label="Abrir mascote capivara. Use as setas para mover."
-            className={`relative flex items-center justify-center w-14 h-14 rounded-full overflow-hidden touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
-              isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            } ${isDark ? 'bg-[#121513]' : 'bg-white'}`}
+            onClick={showNextTip}
+            aria-label="Pedir uma dica à Capivara"
+            className="rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
           >
-            <img
-              src={mascotImageSrc}
-              alt=""
-              className="w-[115%] h-[115%] max-w-none object-contain translate-y-1 select-none"
-              draggable={false}
-            />
+            {avatar(36, 2.5)}
           </button>
-          <div className="absolute -bottom-1 -right-1 z-20 pointer-events-none scale-75 origin-bottom-right">
-            {renderMoodBadge()}
+          <div key={dialogueKey} aria-live="polite" className="capy-tip-in min-w-0 flex-1">
+            <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.06em]">
+              {dialogue.eyebrow}
+            </p>
+            <p
+              className={`text-strong text-[13px] leading-snug ${
+                isMobileOpen ? '' : 'truncate'
+              }`}
+            >
+              {dialogue.title}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen((open) => !open)}
+            aria-expanded={isMobileOpen}
+            aria-label={isMobileOpen ? 'Fechar a dica' : 'Ver a dica inteira'}
+            className="text-muted flex h-11 w-11 shrink-0 items-center justify-center rounded-xl cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          >
+            {isMobileOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
         </div>
+        {isMobileOpen && (
+          <div className="capy-tip-in flex flex-col gap-3 border-t border-[var(--border)] px-3.5 pt-3 pb-3.5">
+            <p className="text-muted text-[13px] leading-relaxed">{dialogue.description}</p>
+            <button
+              type="button"
+              onClick={showNextTip}
+              className="btn-glass inline-flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-medium cursor-pointer"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Outra dica
+            </button>
+          </div>
+        )}
       </aside>
     )
   }
 
-  return (
-    <aside
-      ref={asideRef}
-      aria-live="polite"
-      aria-label="Assistente mascote Capivara do SONORA"
-      className={asideClassName}
-      style={asideStyle}
-    >
-      {/* Floating Speech Bubble */}
-      {isBubbleOpen && (
-        <div
-          className={`mascot-bubble-in absolute ${
-            bubbleBelow
-              ? 'top-full mt-3 origin-top'
-              : 'bottom-full mb-2 origin-bottom'
-          } ${
-            bubbleAlignRight ? 'right-0' : 'left-0'
-          } ${
-            isDragging
-              ? 'pointer-events-none opacity-0 scale-95'
-              : 'pointer-events-auto opacity-100 scale-100'
-          } w-[280px] sm:w-[320px] lg:w-[216px] rounded-2xl border p-3.5 sm:p-4 shadow-xl transition-[opacity,scale] duration-200 ease-out ${
-            mood === 'dragging'
-              ? isDark
-                ? 'border-[#BCEE45] bg-[#181E14]/95 text-[#F3F4F6] backdrop-blur-md'
-                : 'border-[#65A30D] bg-[#F7FEE7]/95 text-[#111315] backdrop-blur-md'
-              : mood === 'error'
-                ? isDark
-                  ? 'border-red-800/80 bg-[#1A1315]/95 text-[#F3F4F6] backdrop-blur-md'
-                  : 'border-red-300 bg-red-50/95 text-[#111315] backdrop-blur-md'
-                : isDark
-                  ? 'border-[#2A302C] bg-[#121513]/95 text-[#F3F4F6] backdrop-blur-md'
-                  : 'border-[#E5E7EB] bg-white/95 text-[#111315] backdrop-blur-md'
-          }`}
-        >
-          {/* Top Header Row inside Bubble */}
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full ${
-                  mood === 'error'
-                    ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                    : isDark
-                      ? 'bg-[#BCEE45]/15 text-[#BCEE45]'
-                      : 'bg-[#ECFCCB] text-[#3F6212]'
-                }`}
-              >
-                {(mood === 'converting' || mood === 'grooving') && (
-                  <Disc3 className="w-3 h-3 animate-spin" />
-                )}
-                {mood === 'idle' && <Music className="w-3 h-3" />}
-                <span>{dialogue.eyebrow}</span>
-              </span>
-
-              {petCount > 0 && (
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                    isDark
-                      ? 'bg-[#1F242B] text-[#A3AAA5]'
-                      : 'bg-[#F1F3F5] text-[#525866]'
-                  }`}
-                  title="Vezes que você interagiu com a Capivara"
-                >
-                  <Heart className="w-2.5 h-2.5 text-pink-500 fill-pink-500" />
-                  <span>{petCount}</span>
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => setDismissedEventKey(currentEventKey)}
-                title="Fechar balão de fala"
-                aria-label="Fechar balão de fala do mascote"
-                className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                  isDark
-                    ? 'text-[#A3AAA5] hover:text-white hover:bg-[#1F2421]'
-                    : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
-                }`}
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleMinimize}
-                title="Minimizar capivara (ela para de falar)"
-                aria-label="Minimizar mascote capivara"
-                className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                  isDark
-                    ? 'text-[#A3AAA5] hover:text-white hover:bg-[#1F2421]'
-                    : 'text-[#6B7280] hover:text-[#111315] hover:bg-[#F3F4F6]'
-                }`}
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Dialogue Title & Description */}
-          <h2 className="text-xs sm:text-sm font-bold leading-snug">
-            {dialogue.title}
-          </h2>
-          <p
-            className={`mt-1 text-[11px] sm:text-xs leading-relaxed ${
-              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-            }`}
-          >
-            {dialogue.description}
-          </p>
-
-          {/* Live Conversion Progress Bar inside Bubble */}
-          {state === 'converting' && (
-            <div className="mt-2.5">
-              <div
-                className={`h-1.5 w-full overflow-hidden rounded-full ${
-                  isDark ? 'bg-[#1F2421]' : 'bg-[#E5E7EB]'
-                }`}
-              >
-                <div
-                  className="h-full rounded-full bg-[#BCEE45] transition-all duration-300"
-                  style={{
-                    width: `${Math.max(5, Math.min(100, progressPercent))}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Action Footer inside Bubble */}
-          <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={handleInteractMascot}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
-                isDark
-                  ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:border-[#BCEE45]/60 hover:text-[#BCEE45]'
-                  : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:border-[#65A30D] hover:bg-[#ECFCCB]/40'
-              }`}
-            >
-              {activeTipIndex !== null ? (
-                <>
-                  <Wand2 className="w-3 h-3 text-[#4D7C0F] dark:text-[#BCEE45]" />
-                  <span>Outra dica / pose</span>
-                </>
-              ) : (
-                <>
-                  <MessageCircleHeart className="w-3 h-3 text-[#4D7C0F] dark:text-[#BCEE45]" />
-                  <span>Dica da Capivara</span>
-                </>
-              )}
-            </button>
-
-            <span
-              className={`inline-flex items-center gap-1 text-[10px] ${
-                isDark ? 'text-[#6B7280]' : 'text-[#A3AAA5]'
-              }`}
-            >
-              <Move className="w-3 h-3" />
-              Arraste para mover
-            </span>
-          </div>
-
-          {/* Speech Bubble Pointer Tail */}
-          <div
-            aria-hidden="true"
-            className={`absolute h-3.5 w-3.5 rotate-45 ${
-              bubbleBelow
-                ? '-top-2 border-l border-t'
-                : '-bottom-2 border-r border-b'
-            } ${bubbleAlignRight ? 'right-10' : 'left-10'} ${
-              mood === 'dragging'
-                ? isDark
-                  ? 'border-[#BCEE45] bg-[#181E14]'
-                  : 'border-[#65A30D] bg-[#F7FEE7]'
-                : mood === 'error'
-                  ? isDark
-                    ? 'border-red-800/80 bg-[#1A1315]'
-                    : 'border-red-300 bg-red-50'
-                  : isDark
-                    ? 'border-[#2A302C] bg-[#121513]'
-                    : 'border-[#E5E7EB] bg-white'
-            }`}
-          />
-        </div>
-      )}
-
-      {/* Interactive Capybara Character (arrastável) */}
-      <div
-        ref={liftRef}
-        style={liftStyle(isDragging)}
-        className="group/mascot relative pointer-events-auto"
+  /* ------------------------ Barra lateral: recolhida ------------------------ */
+  if (isCollapsed) {
+    return (
+      <aside
+        aria-label="Capivara (recolhida)"
+        className="flex items-center gap-2.5 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] py-1.5 pl-1.5 pr-1.5"
       >
-        {/* Floating Musical Notes / Hearts around the Mascot */}
-        {showMusicalNotes && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-4 inset-x-0 flex justify-between px-2 z-20"
-          >
-            <span className="mascot-note-1 text-sm font-bold text-[#4D7C0F] dark:text-[#BCEE45] drop-shadow-xs">
-              ♪
-            </span>
-            <span className="mascot-note-2 text-base font-bold text-pink-500 drop-shadow-xs">
-              {isPopping ? '♥' : '♫'}
-            </span>
-            <span className="mascot-note-3 text-sm font-bold text-[#4D7C0F] dark:text-[#BCEE45] drop-shadow-xs">
-              ♬
-            </span>
-          </div>
-        )}
-
-        {/* Ambient Glow Behind Mascot */}
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-2 rounded-full blur-xl transition-opacity duration-300 ${
-            mood === 'error'
-              ? 'bg-red-500/25 opacity-90'
-              : mood === 'converting' ||
-                  mood === 'grooving' ||
-                  mood === 'dragging' ||
-                  mood === 'success'
-                ? 'bg-[#BCEE45]/35 opacity-100 animate-pulse'
-                : 'bg-[#BCEE45]/20 opacity-75'
-          }`}
-        />
-
+        {avatar(36, 2)}
+        <span className="text-muted min-w-0 flex-1 truncate text-[13px]">
+          {isConverting ? `Convertendo · ${progressPercent}%` : 'Capivara'}
+        </span>
         <button
           type="button"
-          {...dragHandlers}
-          onClick={handleInteractMascot}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          title="Clique para dicas e poses, ou segure e arraste para mover"
-          aria-label="Interagir com o mascote capivara do SONORA. Use as setas para mover."
-          className={`group relative flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-24 sm:h-24 lg:w-32 lg:h-32 touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-full ${animationClass} ${
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
-          // Pausa (sem remover) a animação para não dar "pulo" ao pegar
-          style={{ animationPlayState: isDragging ? 'paused' : 'running' }}
+          onClick={() => setCollapsed(false)}
+          aria-label="Abrir a Capivara"
+          className="btn-glass flex h-9 w-9 items-center justify-center rounded-[10px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
         >
-          <img
-            key={mascotImageSrc}
-            src={mascotImageSrc}
-            alt="Mascote capivara do SONORA"
-            className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.32)] transition-transform duration-300 group-hover:scale-108 select-none"
-            draggable={false}
-          />
-
-          {/* Scanning Laser Beam during validation */}
-          {mood === 'validating' && (
-            <div
-              aria-hidden="true"
-              className="mascot-scan-beam pointer-events-none absolute inset-x-3 h-1.5 rounded-full bg-gradient-to-r from-transparent via-[#A3E635] to-transparent shadow-[0_0_8px_#A3E635]"
-            />
-          )}
-
-          {/* Studio Equalizer Bars at bottom when converting or playing audio */}
-          {(mood === 'converting' || mood === 'grooving') && (
-            <div
-              aria-hidden="true"
-              className="absolute bottom-1 inset-x-0 flex items-end justify-center gap-1 pointer-events-none"
-            >
-              <span className="mascot-eq-1 w-1 h-3 rounded-full bg-[#BCEE45] shadow-xs origin-bottom" />
-              <span className="mascot-eq-2 w-1 h-4 rounded-full bg-[#BCEE45] shadow-xs origin-bottom" />
-              <span className="mascot-eq-3 w-1 h-2.5 rounded-full bg-[#BCEE45] shadow-xs origin-bottom" />
-              <span className="mascot-eq-4 w-1 h-3.5 rounded-full bg-[#BCEE45] shadow-xs origin-bottom" />
-            </div>
-          )}
+          <ChevronUp className="text-muted h-4 w-4" />
         </button>
+      </aside>
+    )
+  }
 
-        {/* Minimizar (aparece ao passar o mouse; sempre visível em telas de toque) */}
-        {!isDragging && (
-          <button
-            type="button"
-            onClick={handleMinimize}
-            title="Minimizar capivara (ela para de falar)"
-            aria-label="Minimizar mascote capivara"
-            className={`absolute top-0 right-0 z-30 inline-flex p-1 rounded-full border shadow-md cursor-pointer transition-opacity opacity-0 group-hover/mascot:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
-              isDark
-                ? 'bg-[#121513] border-[#2A302C] text-[#F3F4F6] hover:text-[#BCEE45]'
-                : 'bg-white border-[#E5E7EB] text-[#111315] hover:text-[#4D7C0F]'
-            }`}
-          >
-            <Minus className="w-3 h-3 stroke-[2.5]" />
-          </button>
-        )}
-
-        {/* Corner Mood Badge */}
-        <div className="absolute bottom-1 right-1 z-20 pointer-events-none">
-          {renderMoodBadge()}
+  /* ------------------------- Barra lateral: aberta ------------------------- */
+  return (
+    <aside
+      aria-label="Dicas da Capivara"
+      className="flex flex-col gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] p-4"
+    >
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={showNextTip}
+          aria-label="Pedir uma dica à Capivara"
+          title="Clique para outra dica"
+          className="rounded-full cursor-pointer transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          {avatar(58, 3)}
+        </button>
+        <div key={dialogueKey} className="capy-tip-in min-w-0" aria-live="polite">
+          <p className="text-accent text-[11px] font-semibold uppercase tracking-[0.08em]">
+            {dialogue.eyebrow}
+          </p>
+          <p className="text-strong text-sm font-semibold leading-snug">{dialogue.title}</p>
         </div>
+      </div>
+      <p key={`d-${dialogueKey}`} className="capy-tip-in text-muted text-[13px] leading-relaxed">
+        {dialogue.description}
+      </p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={showNextTip}
+          className="btn-glass flex min-h-10 flex-1 items-center justify-center gap-2 rounded-[10px] text-[13px] font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Outra dica
+        </button>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          aria-label="Recolher a Capivara"
+          title="Recolher"
+          className="btn-glass flex h-10 w-10 items-center justify-center rounded-[10px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          <ChevronDown className="text-muted h-4 w-4" />
+        </button>
       </div>
     </aside>
   )

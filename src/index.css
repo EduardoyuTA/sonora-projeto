@@ -71,228 +71,91 @@ input[type='range']:focus-visible {
   outline-offset: 2px;
 }
 
-@keyframes mascot-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-1deg) scale(1);
-  }
-  50% {
-    transform: translateY(-4px) rotate(1.5deg) scale(1.02);
-  }
+/* ============================ Capivara ============================ */
+.capy {
+  overflow: visible;
+  transform-origin: 50% 90%;
+}
+.capy .capy-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: capy-blink 4.6s infinite;
+}
+.capy .capy-ears {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: capy-ears 0.5s ease-in-out 2;
+}
+.capy .capy-pop-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: capy-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.capy .capy-notes {
+  animation: capy-notes 1.6s ease-in-out infinite;
 }
 
-@keyframes mascot-excited {
-  0%,
-  100% {
-    transform: translateY(0) scale(1) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-7px) scale(1.06, 0.96) rotate(-4deg);
-  }
-  50% {
-    transform: translateY(0) scale(0.97, 1.04) rotate(0deg);
-  }
-  75% {
-    transform: translateY(-6px) scale(1.05, 0.97) rotate(4deg);
-  }
+.capy-float { animation: capy-float 4s ease-in-out infinite; }
+.capy-sway { animation: capy-sway 1.8s ease-in-out infinite; }
+.capy-bounce { animation: capy-bounce 0.7s ease-in-out infinite; }
+.capy-inspect { animation: capy-inspect 2.2s ease-in-out infinite; }
+.capy-hop { animation: capy-hop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 2; }
+.capy-shake { animation: capy-shake 0.45s ease-in-out 1; }
+
+@keyframes capy-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes capy-ears {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg); }
+}
+@keyframes capy-pop-in {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes capy-notes {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-4px); opacity: 0.7; }
+}
+@keyframes capy-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes capy-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes capy-bounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-4px) scale(0.98, 1.02); }
+}
+@keyframes capy-inspect {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-5deg); }
+  70% { transform: rotate(5deg); }
+}
+@keyframes capy-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-8px) scale(1.04); }
+}
+@keyframes capy-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
 
-@keyframes mascot-inspect {
-  0%,
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-  30% {
-    transform: rotate(-7deg) scale(1.04) translateX(-2px);
-  }
-  70% {
-    transform: rotate(7deg) scale(1.04) translateX(2px);
-  }
+/* Cartão de dicas: texto novo entra com um leve deslize */
+@keyframes capy-tip-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.capy-tip-in { animation: capy-tip-in 0.25s ease-out; }
 
-@keyframes mascot-groove {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-3deg) scale(1);
-  }
-  25% {
-    transform: translateY(-5px) rotate(0deg) scale(1.04, 0.97);
-  }
-  50% {
-    transform: translateY(0) rotate(3deg) scale(1);
-  }
-  75% {
-    transform: translateY(-5px) rotate(0deg) scale(1.04, 0.97);
-  }
-}
-
-@keyframes mascot-celebrate {
-  0%,
-  100% {
-    transform: translateY(0) scale(1) rotate(0deg);
-  }
-  20% {
-    transform: translateY(-9px) scale(1.08) rotate(-5deg);
-  }
-  40% {
-    transform: translateY(0) scale(0.95, 1.05) rotate(4deg);
-  }
-  60% {
-    transform: translateY(-6px) scale(1.05) rotate(-3deg);
-  }
-  80% {
-    transform: translateY(0) scale(1) rotate(2deg);
-  }
-}
-
-@keyframes mascot-wobble {
-  0%,
-  100% {
-    transform: translateX(0) rotate(0deg);
-  }
-  20% {
-    transform: translateX(-4px) rotate(-5deg);
-  }
-  40% {
-    transform: translateX(4px) rotate(5deg);
-  }
-  60% {
-    transform: translateX(-3px) rotate(-3deg);
-  }
-  80% {
-    transform: translateX(2px) rotate(2deg);
-  }
-}
-
-@keyframes mascot-pop {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(1.14, 0.9) translateY(-5px) rotate(4deg);
-  }
-  70% {
-    transform: scale(0.96, 1.05) translateY(1px) rotate(-2deg);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes mascot-note-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(6px) scale(0.7) rotate(-10deg);
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-26px) translateX(8px) scale(1.15) rotate(14deg);
-  }
-}
-
-@keyframes mascot-scan-line {
-  0% {
-    top: -10%;
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.85;
-  }
-  70% {
-    opacity: 0.85;
-  }
-  100% {
-    top: 110%;
-    opacity: 0;
-  }
-}
-
-@keyframes mascot-eq-bar {
-  0%,
-  100% {
-    transform: scaleY(0.3);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
-
-@keyframes mascot-bubble-in {
-  from {
-    opacity: 0;
-    translate: 0 6px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-
-.mascot-bubble-in {
-  animation: mascot-bubble-in 0.22s ease-out;
-}
-
-.mascot-float {
-  animation: mascot-float 3.4s ease-in-out infinite;
-}
-
-.mascot-excited {
-  animation: mascot-excited 0.9s ease-in-out infinite;
-}
-
-.mascot-inspect {
-  animation: mascot-inspect 1.8s ease-in-out infinite;
-}
-
-.mascot-groove {
-  animation: mascot-groove 0.75s ease-in-out infinite;
-}
-
-.mascot-celebrate {
-  animation: mascot-celebrate 1.4s ease-in-out infinite;
-}
-
-.mascot-wobble {
-  animation: mascot-wobble 1.6s ease-in-out infinite;
-}
-
-.mascot-pop {
-  animation: mascot-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.mascot-note-1 {
-  animation: mascot-note-rise 2.1s ease-out infinite;
-}
-
-.mascot-note-2 {
-  animation: mascot-note-rise 2.4s ease-out 0.7s infinite;
-}
-
-.mascot-note-3 {
-  animation: mascot-note-rise 2s ease-out 1.3s infinite;
-}
-
-.mascot-scan-beam {
-  animation: mascot-scan-line 1.5s linear infinite;
-}
-
-.mascot-eq-1 {
-  animation: mascot-eq-bar 0.55s ease-in-out infinite;
-}
-
-.mascot-eq-2 {
-  animation: mascot-eq-bar 0.45s ease-in-out 0.15s infinite;
-}
-
-.mascot-eq-3 {
-  animation: mascot-eq-bar 0.65s ease-in-out 0.3s infinite;
-}
-
-.mascot-eq-4 {
-  animation: mascot-eq-bar 0.5s ease-in-out 0.1s infinite;
+.motion-reduce .capy,
+.motion-reduce .capy *,
+.motion-reduce .capy-tip-in {
+  animation: none !important;
 }
 
 /* ======================= Studio design system ======================= */
@@ -455,19 +318,6 @@ input[type='range']:focus-visible {
   --lg-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
 
-/* Vídeo da capivara: bordas que se dissolvem no fundo desfocado */
-.login-hero-mask {
-  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
-}
-
-@media (min-width: 1024px) {
-  .login-hero-mask {
-    -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);
-    mask-image: linear-gradient(to right, #000 58%, transparent 100%);
-  }
-}
-
 @keyframes login-fade-in {
   from {
     opacity: 0;
@@ -481,24 +331,6 @@ input[type='range']:focus-visible {
 
 .login-fade-in {
   animation: login-fade-in 0.32s ease-out;
-}
-
-@keyframes login-mascot-pop {
-  0% {
-    scale: 0.85;
-    opacity: 0.4;
-  }
-  60% {
-    scale: 1.06;
-    opacity: 1;
-  }
-  100% {
-    scale: 1;
-  }
-}
-
-.login-mascot-pop {
-  animation: login-mascot-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes login-shake {

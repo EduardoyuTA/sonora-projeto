@@ -47,11 +47,11 @@ export const SonoraBrandMark: React.FC<SonoraBrandMarkProps> = React.memo(
 
         <div className="flex flex-col items-start text-left">
           <span
-            className={`font-display font-bold leading-none tracking-[0.04em] text-[#F2F4F0] ${titleSize}`}
+            className={`font-display font-bold leading-none tracking-[0.04em] text-(--lg-text) ${titleSize}`}
           >
             SONORA
           </span>
-          <span className="text-xs text-[#A3AAA5] leading-tight mt-1">
+          <span className="text-xs text-(--lg-muted) leading-tight mt-1">
             Vídeo para áudio
           </span>
         </div>

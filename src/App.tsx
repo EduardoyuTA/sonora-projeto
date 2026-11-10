@@ -106,8 +106,6 @@ export function App() {
     description: string
   } | null>(null)
 
-  const [talkRequest, setTalkRequest] = useState(0)
-
   const abortControllerRef = useRef<AbortController | null>(null)
   const reactionTimerRef = useRef<number | null>(null)
   const toastTimerRef = useRef<number | null>(null)
@@ -276,10 +274,6 @@ export function App() {
   const handlePasswordUpdated = () => {
     setIsPasswordRecovery(false)
     showToast('Senha atualizada! Você já está conectado.')
-  }
-
-  const handleTalkToMascot = () => {
-    setTalkRequest((n) => n + 1)
   }
 
   const handleUpdateSettings = (next: AppSettings) => {
@@ -586,6 +580,19 @@ export function App() {
 
   const isConverting = conversionState === 'converting'
 
+  const mascotProps = {
+    state: conversionState,
+    activeTab,
+    progressPercent,
+    progressStage,
+    isDraggingFile,
+    isAudioPlaying,
+    config,
+    video,
+    historyCount: historyItems.length,
+    customReaction: customMascotReaction,
+  }
+
   return (
     <div
       className={`relative min-h-screen ${
@@ -606,21 +613,8 @@ export function App() {
         </div>
       )}
 
-      {/* Interactive Capybara Mascot (bottom-left; sits in the sidebar on desktop) */}
-      <MascotGuide
-        state={conversionState}
-        activeTab={activeTab}
-        theme={settings.theme}
-        progressPercent={progressPercent}
-        progressStage={progressStage}
-        isDraggingFile={isDraggingFile}
-        isAudioPlaying={isAudioPlaying}
-        config={config}
-        video={video}
-        historyCount={historyItems.length}
-        customReaction={customMascotReaction}
-        talkRequest={talkRequest}
-      />
+      {/* Capivara: faixa acima da barra de baixo (celular) */}
+      <MascotGuide variant="mobile" {...mascotProps} />
 
       <MobileTabBar
         activeTab={activeTab}
@@ -635,8 +629,8 @@ export function App() {
           onSelectTab={setActiveTab}
           historyCount={historyItems.length}
           isConverting={isConverting}
-          onTalkToMascot={handleTalkToMascot}
           processingMode={settings.processingMode}
+          mascot={<MascotGuide variant="sidebar" {...mascotProps} />}
         />
 
         <div className="flex-1 min-w-0 flex flex-col min-h-screen px-4 sm:px-6 lg:px-10 lg:pt-6 pb-44 lg:pb-0">
@@ -686,7 +680,6 @@ export function App() {
               }}
               theme={settings.theme}
               onDragStateChange={setIsDraggingFile}
-              onTalkToMascot={handleTalkToMascot}
             />
 
             {/* Settings Panel when video is loaded */}

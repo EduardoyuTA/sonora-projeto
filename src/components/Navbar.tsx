@@ -4,7 +4,6 @@ import {
   Check,
   History,
   LogOut,
-  MessageCircle,
   Moon,
   Music,
   Settings,
@@ -190,8 +189,9 @@ interface SidebarProps {
   onSelectTab: (tab: ActiveTab) => void
   historyCount: number
   isConverting: boolean
-  onTalkToMascot: () => void
   processingMode: ProcessingMode
+  /** Cartão da Capivara, fixo no rodapé da barra lateral */
+  mascot?: React.ReactNode
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -199,8 +199,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   historyCount,
   isConverting,
-  onTalkToMascot,
   processingMode,
+  mascot,
 }) => {
   const navItems = buildNavItems(historyCount)
   const isLocalOnly = processingMode === 'browser-only'
@@ -243,18 +243,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Espaço onde a capivara fica apoiada */}
       <div className="flex-1" />
 
       <div className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={onTalkToMascot}
-          className={`btn-glass flex min-h-11 items-center justify-center gap-2 rounded-[10px] px-3 text-sm font-medium cursor-pointer ${focusRing}`}
-        >
-          <MessageCircle className="text-accent h-[18px] w-[18px]" strokeWidth={2} />
-          Falar com a Capivara
-        </button>
+        {mascot}
         <p
           className="text-muted flex items-center gap-2 px-2 text-xs"
           title={

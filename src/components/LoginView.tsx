@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react'
+import React, { useEffect, useId, useState } from 'react'
 import {
   ArrowLeft,
   AudioLines,
@@ -20,8 +20,9 @@ import {
   UserPlus,
   UserRound,
 } from 'lucide-react'
-import type { AuthUser } from '../types/sonora'
+import type { AuthUser, MascotMood } from '../types/sonora'
 import { SonoraBrandMark } from './SonoraBrandMark'
+import { Capybara } from './Capybara'
 import {
   isAuthConfigured,
   sendPasswordReset,
@@ -48,7 +49,7 @@ interface LoginViewProps {
 
 const MIN_NEW_PASSWORD = 8
 
-/* --------------------------- Vídeo da capivara -------------------------- */
+/* ------------------------------ Apresentação ----------------------------- */
 
 const FEATURE_CHIPS = [
   { icon: AudioLines, label: 'MP3 · WAV · M4A · AAC' },
@@ -56,125 +57,63 @@ const FEATURE_CHIPS = [
   { icon: ShieldCheck, label: 'Nada fica guardado' },
 ]
 
-/**
- * Cenário único da tela: o vídeo nítido da capivara se dissolve numa versão
- * desfocada da mesma imagem que cobre a tela toda — sem divisão no meio.
- */
-const LoginBackdrop: React.FC<{ prefersReducedMotion: boolean }> = React.memo(
-  ({ prefersReducedMotion }) => {
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const [videoReady, setVideoReady] = useState(false)
-
-    useEffect(() => {
-      const videoEl = videoRef.current
-      if (!videoEl) return
-      if (prefersReducedMotion) {
-        videoEl.pause()
-      } else {
-        videoEl.play().catch(() => {
-          // O poster continua visível se o autoplay for bloqueado
-        })
-      }
-    }, [prefersReducedMotion])
-
-    return (
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#06090A] select-none"
-      >
-        {/* Ambiente: a mesma cena, desfocada, preenchendo a tela inteira */}
-        <img
-          src="/capivara-login-poster.jpg"
-          alt=""
-          draggable={false}
-          className="absolute inset-0 h-full w-full object-cover scale-125 blur-[70px] saturate-[1.6] opacity-80"
-        />
-
-        {/* Cena nítida, com bordas que se dissolvem no ambiente */}
-        <div className="login-hero-mask absolute inset-x-0 top-0 h-[48vh] lg:h-full lg:right-auto lg:w-[68%]">
-          <img
-            src="/capivara-login-poster.jpg"
-            alt=""
-            draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover object-[50%_30%] lg:object-[45%_center] saturate-[1.15] contrast-[1.05] transition-opacity duration-500 ${
-              videoReady && !prefersReducedMotion ? 'opacity-0' : 'opacity-100'
-            }`}
-          />
-          {!prefersReducedMotion && (
-            <video
-              ref={videoRef}
-              src="/capivara-login-boas-vindas-claro.mp4"
-              poster="/capivara-login-poster.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              disablePictureInPicture
-              onCanPlay={() => setVideoReady(true)}
-              onLoadedData={() => setVideoReady(true)}
-              className="absolute inset-0 h-full w-full object-cover object-[50%_30%] lg:object-[45%_center] saturate-[1.15] contrast-[1.05]"
-            />
-          )}
-        </div>
-
-        {/* Leve sombra só onde há texto (canto inferior esquerdo) */}
-        <div className="hidden lg:block absolute inset-0 bg-[radial-gradient(ellipse_70%_45%_at_0%_100%,rgba(6,9,10,0.85),transparent_70%)]" />
-        {/* Brilho lima atrás do cartão */}
-        <div className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#C5F04A]/10 blur-[120px]" />
-      </div>
-    )
-  }
-)
+/** Fundo chapado com um brilho verde suave atrás da capivara e do cartão */
+const LoginBackdrop: React.FC = React.memo(() => (
+  <div
+    aria-hidden="true"
+    className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-(--lg-page) select-none"
+  >
+    <div className="absolute -left-[10%] top-[8%] h-[70vh] w-[70vh] rounded-full bg-[#C5F04A]/12 blur-[140px]" />
+    <div className="absolute right-[4%] top-1/2 -translate-y-1/2 h-[520px] w-[520px] rounded-full bg-[#C5F04A]/8 blur-[120px]" />
+  </div>
+))
 
 LoginBackdrop.displayName = 'LoginBackdrop'
 
-const LoginHero: React.FC = () => (
-  <div className="hidden lg:block max-w-xl text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55)]">
-    <h2 className="text-[34px] xl:text-5xl font-bold leading-[1.05] tracking-tight">
-      Do vídeo ao áudio de estúdio{' '}
-      <span className="text-[#C6FF4A]">em segundos.</span>
-    </h2>
-    <p className="mt-3 xl:mt-4 text-[15px] xl:text-lg text-white/80 max-w-md leading-relaxed">
-      Extraia a trilha de qualquer vídeo, corte o trecho que quiser e baixe
-      com qualidade de estúdio.
-    </p>
-    <ul className="mt-5 xl:mt-6 flex flex-wrap gap-2 [text-shadow:none]">
-      {FEATURE_CHIPS.map(({ icon: Icon, label }) => (
-        <li
-          key={label}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold"
-        >
-          <Icon aria-hidden="true" className="w-3.5 h-3.5 text-[#C6FF4A]" />
-          {label}
-        </li>
-      ))}
-    </ul>
+const LoginHero: React.FC<{ mood: MascotMood; still: boolean }> = ({ mood, still }) => (
+  <div className="hidden lg:flex flex-col gap-8 max-w-xl">
+    <Capybara mood={mood} size={240} still={still} title="Capivara, mascote do SONORA" />
+    <div>
+      <h2 className="text-[34px] xl:text-5xl font-semibold leading-[1.05] text-(--lg-text)">
+        Do vídeo ao áudio
+        <br />
+        <span className="text-(--lg-accent-text)">de estúdio.</span>
+      </h2>
+      <p className="mt-3 xl:mt-4 text-[15px] xl:text-lg text-(--lg-muted) max-w-md leading-relaxed">
+        Extraia a trilha de qualquer vídeo, corte o trecho que quiser e baixe
+        com qualidade.
+      </p>
+      <ul className="mt-5 xl:mt-6 flex flex-wrap gap-2">
+        {FEATURE_CHIPS.map(({ icon: Icon, label }) => (
+          <li
+            key={label}
+            className="inline-flex items-center gap-1.5 rounded-full border border-(--lg-card-border) px-3.5 py-1.5 text-xs font-medium text-(--lg-muted)"
+          >
+            <Icon aria-hidden="true" className="w-3.5 h-3.5 text-(--lg-accent-text)" />
+            {label}
+          </li>
+        ))}
+      </ul>
+    </div>
   </div>
 )
 
 /* ----------------------- Capivara que reage ao form ---------------------- */
 
-const LoginMascot: React.FC<{ pose: string; message: string; isError: boolean }> = ({
-  pose,
+const LoginMascot: React.FC<{ mood: MascotMood; message: string; isError: boolean }> = ({
+  mood,
   message,
   isError,
 }) => (
-  <div className="flex items-center gap-3 mb-4">
-    <span className="relative shrink-0 flex items-center justify-center w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full bg-[radial-gradient(circle_at_50%_40%,rgba(198,255,74,0.45),rgba(197,240,74,0.12)_60%,transparent_72%)]">
-      <img
-        key={pose}
-        src={pose}
-        alt=""
-        draggable={false}
-        className="login-mascot-pop w-14 h-14 sm:w-16 sm:h-16 object-contain"
-      />
+  <div className="flex items-center gap-3 mb-4 pr-12">
+    <span className="lg:hidden shrink-0 flex items-center justify-center w-16 h-16 rounded-full bg-(--lg-bubble)">
+      <Capybara mood={mood} size={58} />
     </span>
     <div
       key={message}
       role={isError ? 'alert' : undefined}
       aria-live="polite"
-      className={`login-fade-in relative rounded-2xl rounded-bl-md px-3.5 py-2.5 text-xs sm:text-[13px] leading-snug border ${
+      className={`login-fade-in relative rounded-2xl rounded-bl-md lg:rounded-bl-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-snug border ${
         isError
           ? 'border-red-400/40 bg-red-500/10 text-red-500 dark:text-red-300'
           : 'border-(--lg-card-border) bg-(--lg-bubble) text-(--lg-text)'
@@ -526,41 +465,41 @@ export const LoginView: React.FC<LoginViewProps> = ({
   }
 
   // Pose e fala da capivara conforme o que a pessoa está fazendo
-  const resolveMascot = (): { pose: string; message: string; isError: boolean } => {
+  const resolveMascot = (): { mood: MascotMood; message: string; isError: boolean } => {
     if (formError) {
-      return { pose: '/mascote/pose-surprised.png', message: formError, isError: true }
+      return { mood: 'error', message: formError, isError: true }
     }
     if (Object.values(errors).some(Boolean)) {
       return {
-        pose: '/mascote/pose-think.png',
+        mood: 'validating',
         message: 'Quase lá! Dá uma conferida nos campos marcados.',
         isError: false,
       }
     }
     if (emailSent) {
       return {
-        pose: '/mascote/pose-thumbsup.png',
+        mood: 'success',
         message: 'E-mail a caminho! Confira também a caixa de spam.',
         isError: false,
       }
     }
     if (isGoogleLoading) {
       return {
-        pose: '/mascote/pose-wave.png',
+        mood: 'tuning',
         message: 'Te levando até o Google…',
         isError: false,
       }
     }
     if (isSubmitting) {
       return {
-        pose: '/mascote/pose-laptop.png',
+        mood: 'converting',
         message: 'Conferindo com o servidor…',
         isError: false,
       }
     }
     if (!accountsEnabled) {
       return {
-        pose: '/mascote/pose-peace.png',
+        mood: 'loaded',
         message: 'As contas ainda não estão ativas, mas o estúdio já está aberto!',
         isError: false,
       }
@@ -568,19 +507,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
     if (focusedField === 'password' || focusedField === 'confirm') {
       return showPassword
         ? {
-            pose: '/mascote/pose-surprised.png',
+            mood: 'dragging',
             message: 'Opa, senha à mostra! Cuidado com quem está olhando.',
             isError: false,
           }
         : {
-            pose: '/mascote/pose-zen.png',
+            mood: 'trimming',
             message: 'Pode digitar, prometo não espiar.',
             isError: false,
           }
     }
     if (focusedField === 'email') {
       return {
-        pose: '/mascote/pose-curious.png',
+        mood: 'validating',
         message:
           mode === 'forgot'
             ? 'Acontece! Qual e-mail você usou no cadastro?'
@@ -590,25 +529,25 @@ export const LoginView: React.FC<LoginViewProps> = ({
     }
     if (focusedField === 'name') {
       return {
-        pose: '/mascote/pose-welcome.png',
+        mood: 'petted',
         message: name.trim()
           ? `Prazer, ${name.trim().split(' ')[0]}!`
           : 'Como posso te chamar?',
         isError: false,
       }
     }
-    const idle: Record<LoginMode, { pose: string; message: string }> = {
-      login: { pose: '/mascote/pose-wave.png', message: 'Oi! Que bom te ver por aqui.' },
+    const idle: Record<LoginMode, { mood: MascotMood; message: string }> = {
+      login: { mood: 'idle', message: 'Oi! Que bom te ver por aqui.' },
       register: {
-        pose: '/mascote/pose-welcome.png',
+        mood: 'loaded',
         message: 'Bora criar sua conta? É rapidinho.',
       },
       forgot: {
-        pose: '/mascote/pose-think.png',
+        mood: 'validating',
         message: 'Esqueceu? Sem problema, te ajudo a criar outra.',
       },
       reset: {
-        pose: '/mascote/pose-confident.png',
+        mood: 'tuning',
         message: 'Escolha uma senha nova e forte.',
       },
     }
@@ -916,18 +855,18 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   return (
     <div
-      className={`login-theme-${isDark ? 'dark' : 'light'} relative min-h-screen w-full text-(--lg-text) overflow-x-hidden selection:bg-[#C5F04A] selection:text-[#090B0C]`}
+      className={`login-theme-${isDark ? 'dark' : 'light'} ${prefersReducedMotion ? 'motion-reduce' : ''} relative min-h-screen w-full text-(--lg-text) overflow-x-hidden selection:bg-[#C5F04A] selection:text-[#090B0C]`}
     >
-      <LoginBackdrop prefersReducedMotion={prefersReducedMotion} />
+      <LoginBackdrop />
 
       <header className="absolute left-0 top-0 z-20 px-4 pt-4 sm:px-7 sm:pt-6 lg:px-10 lg:pt-8">
-        <SonoraBrandMark size="md" withBackdrop />
+        <SonoraBrandMark size="md" />
       </header>
 
-      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row lg:items-center lg:justify-end px-4 pb-8 pt-[34vh] sm:px-7 lg:px-10 lg:py-6 xl:px-16">
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row lg:items-center lg:justify-end px-4 pb-8 pt-24 sm:px-7 lg:px-10 lg:py-6 xl:px-16">
         {/* Apresentação fixa no canto inferior esquerdo (desktop) */}
-        <div className="lg:absolute lg:left-10 lg:bottom-10 xl:left-16 xl:bottom-14 lg:right-[520px] xl:right-[560px]">
-          <LoginHero />
+        <div className="lg:absolute lg:left-10 lg:top-1/2 lg:-translate-y-1/2 xl:left-16 lg:right-[520px] xl:right-[560px]">
+          <LoginHero mood={mascot.mood} still={prefersReducedMotion} />
         </div>
 
         <section

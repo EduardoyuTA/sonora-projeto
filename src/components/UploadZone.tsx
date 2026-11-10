@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react'
 import {
   AlertCircle,
   Lock,
-  MessageCircle,
   Music,
   Plus,
   Scissors,
@@ -37,7 +36,6 @@ interface UploadZoneProps {
   onRetry: () => void
   theme: 'light' | 'dark'
   onDragStateChange?: (isDragging: boolean) => void
-  onTalkToMascot: () => void
 }
 
 export const UploadZone: React.FC<UploadZoneProps> = ({
@@ -53,7 +51,6 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   onRetry,
   theme,
   onDragStateChange,
-  onTalkToMascot,
 }) => {
   const isDark = theme === 'dark'
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -519,14 +516,6 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           />
         </ul>
 
-        <button
-          type="button"
-          onClick={onTalkToMascot}
-          className="btn-glass lg:hidden inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl px-4 text-sm font-medium cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
-        >
-          <MessageCircle className="text-accent h-[18px] w-[18px]" strokeWidth={2} />
-          Falar com a Capivara
-        </button>
       </section>
     </>
   )
