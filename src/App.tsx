@@ -89,6 +89,7 @@ export function App() {
       volume: 100,
       normalize: false,
       preserveOriginal: false,
+      introBeats: false,
     }
   })
 
@@ -328,7 +329,7 @@ export function App() {
           ? 'mp3'
           : preferredFormat
 
-      setConfig({
+      setConfig((prev) => ({
         format: effectiveFormat,
         qualityTier: lastPrefs?.qualityTier || settings.defaultQualityTier,
         bitrate: lastPrefs?.bitrate || settings.defaultBitrate,
@@ -338,7 +339,9 @@ export function App() {
         volume: 100,
         normalize: false,
         preserveOriginal: false,
-      })
+        // A escolha das batidas continua valendo para o próximo vídeo
+        introBeats: prev.introBeats,
+      }))
 
       setConversionState('loaded')
     } catch (err) {

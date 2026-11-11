@@ -3,6 +3,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 import crypto from 'node:crypto'
+import { fileURLToPath } from 'node:url'
+
+// Batidas que podem ser colocadas antes do áudio extraído (contagem de 2,4 s).
+// Uma cópia igual fica em public/audio/ para a conversão no navegador.
+const INTRO_BEATS_PATH = fileURLToPath(
+  new URL('./assets/batida-inicial.mp3', import.meta.url)
+)
+// Formato comum para as duas partes antes de juntar
+const CONCAT_FORMAT = 'aformat=sample_rates=44100:channel_layouts=stereo'
 
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024 // 500 MB
 function readPositiveInteger(value, fallback, maximum) {
@@ -102,6 +111,7 @@ export function applyCorsHeaders(req, res, allowedOrigin = '*') {
       'x-sonora-normalize',
       'x-sonora-preserve',
       'x-sonora-ext',
+      'x-sonora-intro',
     ].join(', ')
   )
   res.setHeader(
@@ -233,6 +243,8 @@ export function handleConvertRequest(req, res) {
   const normalize = String(req.headers['x-sonora-normalize'] || 'false') === 'true'
   const preserveOriginal =
     String(req.headers['x-sonora-preserve'] || 'false') === 'true'
+  const withIntroBeats =
+    String(req.headers['x-sonora-intro'] || 'false') === 'true'
   const rawExt = String(req.headers['x-sonora-ext'] || '.mp4').replace(
     /[^a-zA-Z0-9.]/g,
     ''
@@ -356,13 +368,16 @@ export function handleConvertRequest(req, res) {
       args.push('-ss', startTime.toFixed(3))
     }
 
-    args.push('-i', inputPath)
-
+    // -t antes do -i: vale só para o vídeo (e não para as batidas)
     if (!Number.isNaN(endTime) && endTime > 0 && endTime > startTime) {
       args.push('-t', (endTime - Math.max(0, startTime)).toFixed(3))
     }
 
-    args.push('-vn')
+    args.push('-i', inputPath)
+
+    if (withIntroBeats) {
+      args.push('-i', INTRO_BEATS_PATH)
+    }
 
     const filters = []
     if (!preserveOriginal) {
@@ -380,8 +395,22 @@ export function handleConvertRequest(req, res) {
       }
     }
 
-    if (filters.length > 0) {
-      args.push('-af', filters.join(','))
+    if (withIntroBeats) {
+      // Volume e normalização valem só para o áudio do vídeo; as batidas
+      // entram como estão, antes dele
+      const mainChain = [...filters, CONCAT_FORMAT].join(',')
+      args.push(
+        '-filter_complex',
+        `[0:a:0]${mainChain}[main];[1:a:0]${CONCAT_FORMAT}[intro];` +
+          '[intro][main]concat=n=2:v=0:a=1[out]',
+        '-map',
+        '[out]'
+      )
+    } else {
+      args.push('-vn')
+      if (filters.length > 0) {
+        args.push('-af', filters.join(','))
+      }
     }
 
     const safeBitrate = ['96', '128', '160', '192', '256', '320'].includes(

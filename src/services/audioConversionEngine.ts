@@ -360,6 +360,56 @@ function processAudioBuffer(
   return targetBuffer
 }
 
+// Mesma contagem usada pelo servidor (server/assets/batida-inicial.mp3)
+const INTRO_BEATS_URL = '/audio/batida-inicial.mp3'
+export const INTRO_BEATS_SECONDS = 2.4
+
+/**
+ * Coloca as batidas de contagem antes do áudio processado.
+ * As batidas entram como estão (sem o volume/normalização do vídeo).
+ */
+async function prependIntroBeats(
+  mainBuffer: AudioBuffer,
+  signal: AbortSignal
+): Promise<AudioBuffer> {
+  const response = await fetch(INTRO_BEATS_URL, { signal })
+  if (!response.ok) {
+    throw new Error('Não foi possível carregar as batidas iniciais.')
+  }
+  const introBytes = await response.arrayBuffer()
+
+  // Decodifica na mesma taxa do áudio principal para poder juntar as amostras
+  const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+  const ctx = new AudioCtx({ sampleRate: mainBuffer.sampleRate })
+  let introBuffer: AudioBuffer
+  try {
+    introBuffer = await ctx.decodeAudioData(introBytes)
+  } finally {
+    await ctx.close().catch(() => {})
+  }
+
+  const numChannels = mainBuffer.numberOfChannels
+  const combinedCtx = new AudioCtx({ sampleRate: mainBuffer.sampleRate })
+  const combined = combinedCtx.createBuffer(
+    numChannels,
+    introBuffer.length + mainBuffer.length,
+    mainBuffer.sampleRate
+  )
+  combinedCtx.close().catch(() => {})
+
+  for (let c = 0; c < numChannels; c++) {
+    // Batidas mono viram estéreo repetindo o mesmo canal
+    const introChannel = introBuffer.getChannelData(
+      Math.min(c, introBuffer.numberOfChannels - 1)
+    )
+    const dst = combined.getChannelData(c)
+    dst.set(introChannel, 0)
+    dst.set(mainBuffer.getChannelData(c), introBuffer.length)
+  }
+
+  return combined
+}
+
 const ENV_API_BASE_URL = (
   (import.meta.env.VITE_API_BASE_URL as string | undefined) || ''
 )
@@ -509,6 +559,10 @@ async function convertViaNativeFfmpeg(
     xhr.setRequestHeader('x-sonora-normalize', String(config.normalize))
     xhr.setRequestHeader('x-sonora-preserve', String(config.preserveOriginal))
     xhr.setRequestHeader('x-sonora-ext', getExtension(video.name) || '.mp4')
+    // Só envia quando marcado: um servidor ainda sem suporte recusaria o cabeçalho
+    if (config.introBeats) {
+      xhr.setRequestHeader('x-sonora-intro', 'true')
+    }
 
     let processingTimer: number | null = null
     let simulatedProc = 45
@@ -671,7 +725,11 @@ async function convertViaBrowserEngine(
   }
 
   onProgress({ percent: 50, stage: 'Extraindo o áudio...' })
-  const processedBuffer = processAudioBuffer(decodedBuffer, config)
+  let processedBuffer = processAudioBuffer(decodedBuffer, config)
+  if (config.introBeats) {
+    onProgress({ percent: 56, stage: 'Colocando as batidas iniciais...' })
+    processedBuffer = await prependIntroBeats(processedBuffer, signal)
+  }
   const peaks = computePeaksFromBuffer(processedBuffer, 72)
 
   onProgress({ percent: 62, stage: 'Finalizando a conversão...' })
@@ -716,7 +774,9 @@ export async function convertVideoToAudio(
 
   let finalBlob: Blob | null = null
   let peaks: number[] = []
-  let finalDuration = Math.max(0.5, config.endTime - config.startTime)
+  let finalDuration =
+    Math.max(0.5, config.endTime - config.startTime) +
+    (config.introBeats ? INTRO_BEATS_SECONDS : 0)
   let engineUsed: 'ffmpeg-native' | 'web-audio-local' = 'ffmpeg-native'
 
   if (processingMode === 'hybrid-auto') {

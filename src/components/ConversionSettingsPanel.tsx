@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ChevronDown,
   ChevronUp,
   FileAudio,
+  Drum,
   Info,
+  Pause,
+  Play,
   Scissors,
   Sliders,
   Sparkles,
@@ -24,6 +27,7 @@ import {
   formatPreciseTime,
   mapTierToBitrate,
 } from '../utils/formatters'
+import { INTRO_BEATS_SECONDS } from '../services/audioConversionEngine'
 
 interface ConversionSettingsPanelProps {
   video: VideoMetadata
@@ -46,6 +50,33 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
 }) => {
   const isDark = theme === 'dark'
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [isPreviewingBeats, setIsPreviewingBeats] = useState(false)
+  const beatsAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Para a prévia das batidas ao sair da tela
+  useEffect(() => {
+    return () => beatsAudioRef.current?.pause()
+  }, [])
+
+  const toggleBeatsPreview = () => {
+    if (!beatsAudioRef.current) {
+      const audio = new Audio('/audio/batida-inicial.mp3')
+      audio.addEventListener('ended', () => setIsPreviewingBeats(false))
+      beatsAudioRef.current = audio
+    }
+    const audio = beatsAudioRef.current
+    if (isPreviewingBeats) {
+      audio.pause()
+      audio.currentTime = 0
+      setIsPreviewingBeats(false)
+    } else {
+      audio.currentTime = 0
+      audio.play().then(
+        () => setIsPreviewingBeats(true),
+        () => setIsPreviewingBeats(false)
+      )
+    }
+  }
 
   const formats: {
     id: AudioFormat
@@ -116,10 +147,11 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
 
   const bitrates: BitrateKbps[] = [128, 192, 256, 320]
 
-  const selectedDuration = Math.max(
-    0.5,
-    (config.endTime > 0 ? config.endTime : video.duration) - config.startTime
-  )
+  const selectedDuration =
+    Math.max(
+      0.5,
+      (config.endTime > 0 ? config.endTime : video.duration) - config.startTime
+    ) + (config.introBeats ? INTRO_BEATS_SECONDS : 0)
   const estimatedSize = estimateOutputSizeBytes(
     selectedDuration,
     config.format,
@@ -607,6 +639,48 @@ export const ConversionSettingsPanel: React.FC<ConversionSettingsPanelProps> = (
             </div>
           </div>
         )}
+      </div>
+
+      {/* Batidas de contagem antes da música */}
+      <div
+        className={`mb-6 flex items-center gap-3 rounded-2xl border p-4 transition-colors ${
+          config.introBeats
+            ? 'border-[var(--accent-text)] bg-[var(--accent-soft)]'
+            : 'border-[var(--border)] bg-[var(--surface-2)]'
+        }`}
+      >
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={config.introBeats}
+            onChange={(e) =>
+              onChangeConfig({ ...config, introBeats: e.target.checked })
+            }
+            className="h-5 w-5 shrink-0 cursor-pointer rounded accent-[#65A30D]"
+          />
+          <Drum className="text-accent h-5 w-5 shrink-0" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="text-strong block text-sm font-semibold">
+              Colocar batidas no início da música?
+            </span>
+            <span className="text-muted block text-xs">
+              Adiciona 4 batidas de contagem ({INTRO_BEATS_SECONDS.toLocaleString('pt-BR')} s) antes do áudio.
+            </span>
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={toggleBeatsPreview}
+          aria-label={isPreviewingBeats ? 'Parar a prévia das batidas' : 'Ouvir as batidas'}
+          title={isPreviewingBeats ? 'Parar' : 'Ouvir as batidas'}
+          className="btn-glass flex h-11 w-11 shrink-0 items-center justify-center rounded-xl cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+        >
+          {isPreviewingBeats ? (
+            <Pause className="h-4 w-4" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Primary Action: Convert Now */}

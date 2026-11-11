@@ -35,6 +35,8 @@ export interface ConversionConfig {
   volume: number // 0 to 200 (%)
   normalize: boolean
   preserveOriginal: boolean
+  /** Coloca as batidas de contagem antes do áudio extraído */
+  introBeats: boolean
 }
 
 export interface ConvertedAudioResult {
