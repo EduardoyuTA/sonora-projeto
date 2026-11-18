@@ -2,11 +2,15 @@
 
 const MAX_FRAME_WAIT_MS = 100
 const MAX_LOADER_WAIT_MS = 6000
-const CHAPTER_EDGE = 0.035
-const SMOOTHING = 0.2
+const CHAPTER_EDGE = 0.06
+const SMOOTHING_MS = 240
+const MAX_FRAME_STEP_MS = 34
+const SETTLE_DISTANCE = 0.0002
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
+
+const smoothstep = (value: number) => value * value * (3 - 2 * value)
 
 const sceneProgress = (section: HTMLElement) => {
   const box = section.getBoundingClientRect()
@@ -17,7 +21,7 @@ const sceneProgress = (section: HTMLElement) => {
 const chapterVisibility = (p: number, start: number, end: number) => {
   const enter = start <= 0 ? 1 : clamp((p - start) / CHAPTER_EDGE, 0, 1)
   const leave = end >= 1 ? 1 : clamp((end - p) / CHAPTER_EDGE, 0, 1)
-  return Math.min(enter, leave)
+  return smoothstep(Math.min(enter, leave))
 }
 
 const videoDuration = (video: HTMLVideoElement) =>
@@ -70,6 +74,7 @@ export const bindScrollScene = ({
   let current = target
   let framePending = false
   let disposed = false
+  let lastPaintAt = performance.now()
 
   const seekVideo = () => {
     if (!video || video.seeking) return
@@ -84,16 +89,25 @@ export const bindScrollScene = ({
     framePending = false
     if (disposed) return
 
+    // A suavização independe da taxa de quadros da tela
+    const now = performance.now()
+    const elapsed = Math.min(now - lastPaintAt, MAX_FRAME_STEP_MS)
+    lastPaintAt = now
+
     const difference = target - current
     const applyDirectly =
-      document.hidden || reducedMotion || Math.abs(difference) < 0.0005
-    current = applyDirectly ? target : current + difference * SMOOTHING
+      document.hidden ||
+      reducedMotion ||
+      Math.abs(difference) < SETTLE_DISTANCE
+    current = applyDirectly
+      ? target
+      : current + difference * (1 - Math.exp(-elapsed / SMOOTHING_MS))
 
     seekVideo()
-    section.style.setProperty('--p', target.toFixed(4))
+    section.style.setProperty('--p', current.toFixed(4))
 
     chapters.forEach(({ element, start, end }) => {
-      const visibility = chapterVisibility(target, start, end)
+      const visibility = chapterVisibility(current, start, end)
       element.style.setProperty('--capitulo', visibility.toFixed(3))
       element.style.visibility = visibility > 0 ? 'visible' : 'hidden'
     })
@@ -101,7 +115,7 @@ export const bindScrollScene = ({
     if (timecode && video) {
       const duration = videoDuration(video)
       timecode.textContent = formatTimecode(
-        clamp(target / (1 - holdEnd), 0, 1) * duration
+        clamp(current / (1 - holdEnd), 0, 1) * duration
       )
     }
 

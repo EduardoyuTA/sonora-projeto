@@ -27,9 +27,9 @@
   --l-text-lg: 20px;
   --l-text-xl: clamp(32px, 5vw, 64px);
 
-  --l-curve: cubic-bezier(0.22, 1, 0.36, 1);
-  --l-duration: 900ms;
-  --l-stagger: 90ms;
+  --l-curve: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --l-duration: 1400ms;
+  --l-stagger: 130ms;
 
   position: relative;
   overflow-x: clip;
@@ -59,7 +59,7 @@
   color: var(--l-muted);
   font-family: var(--font-mono);
   font-size: var(--l-text-sm);
-  transition: opacity 700ms var(--l-curve), visibility 700ms;
+  transition: opacity 1400ms var(--l-curve), visibility 1400ms;
 }
 
 .l-loader.is-done {
@@ -136,16 +136,16 @@
   font-weight: 700;
   cursor: pointer;
   pointer-events: auto;
-  transition: background-color 200ms ease, transform 300ms var(--l-curve);
+  transition: background-color 500ms ease, transform 700ms var(--l-curve);
 }
 
 .l-btn:hover {
   background: var(--l-lime-hover);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .l-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
 }
 
 .l-btn:focus-visible,
@@ -158,11 +158,11 @@
 .l-btn svg {
   width: 20px;
   height: 20px;
-  transition: transform 300ms var(--l-curve);
+  transition: transform 700ms var(--l-curve);
 }
 
 .l-btn:hover svg {
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 .l-btn--small {
@@ -219,8 +219,9 @@
 
 [data-capitulo] {
   opacity: var(--capitulo, 0);
-  transform: translateY(calc((1 - var(--capitulo, 0)) * 24px));
-  will-change: opacity, transform;
+  filter: blur(calc((1 - var(--capitulo, 0)) * 6px));
+  transform: translateY(calc((1 - var(--capitulo, 0)) * 14px));
+  will-change: opacity, transform, filter;
 }
 
 .l-title {
@@ -264,7 +265,7 @@
 .l-hero__cue svg {
   width: 20px;
   height: 20px;
-  animation: l-cue 1.6s ease-in-out infinite;
+  animation: l-cue 2.8s ease-in-out infinite;
 }
 
 .l-hero__meter {
@@ -444,7 +445,7 @@
   border-radius: 20px;
   background: var(--l-lime-soft);
   color: var(--l-lime);
-  animation: l-float 2.8s ease-in-out infinite;
+  animation: l-float 5s ease-in-out infinite;
 }
 
 .l-file {
@@ -567,12 +568,12 @@
   border-radius: 24px;
   background: var(--l-forest);
   padding: var(--l-space-4);
-  transition: border-color 300ms ease, transform 500ms var(--l-curve);
+  transition: border-color 700ms ease, transform 900ms var(--l-curve);
 }
 
 .l-card:hover {
   border-color: var(--l-lime);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .l-card h3 {
@@ -619,16 +620,16 @@
 }
 
 .l-trim--loop .l-trim__range {
-  animation: l-trim 5s var(--l-curve) infinite alternate;
+  animation: l-trim 9s ease-in-out infinite alternate;
 }
 
 .l-chips--cycle span {
-  animation: l-chip 6s linear infinite;
+  animation: l-chip 10s ease-in-out infinite;
 }
 
-.l-chips--cycle span:nth-child(2) { animation-delay: 1.5s; }
-.l-chips--cycle span:nth-child(3) { animation-delay: 3s; }
-.l-chips--cycle span:nth-child(4) { animation-delay: 4.5s; }
+.l-chips--cycle span:nth-child(2) { animation-delay: 2.5s; }
+.l-chips--cycle span:nth-child(3) { animation-delay: 5s; }
+.l-chips--cycle span:nth-child(4) { animation-delay: 7.5s; }
 
 .l-meter {
   display: flex;
@@ -643,7 +644,7 @@
   border-radius: 4px;
   background: var(--l-lime);
   transform-origin: bottom;
-  animation: l-meter 1.3s ease-in-out infinite alternate;
+  animation: l-meter 2.6s ease-in-out infinite alternate;
 }
 
 .l-beats {
@@ -656,12 +657,12 @@
   height: 24px;
   border-radius: 50%;
   background: var(--l-lime);
-  animation: l-beat 2s ease-in-out infinite;
+  animation: l-beat 3.6s ease-in-out infinite;
 }
 
-.l-beats i:nth-child(2) { animation-delay: 0.25s; }
-.l-beats i:nth-child(3) { animation-delay: 0.5s; }
-.l-beats i:nth-child(4) { animation-delay: 0.75s; }
+.l-beats i:nth-child(2) { animation-delay: 0.45s; }
+.l-beats i:nth-child(3) { animation-delay: 0.9s; }
+.l-beats i:nth-child(4) { animation-delay: 1.35s; }
 
 .l-privacy__grid {
   display: grid;
@@ -705,7 +706,7 @@
   height: 20px;
   flex-shrink: 0;
   color: var(--l-lime);
-  transition: transform 300ms var(--l-curve);
+  transition: transform 700ms var(--l-curve);
 }
 
 .l-faq__list details[open] summary svg {
@@ -759,11 +760,11 @@
 .reveal-ready [data-revelar],
 .reveal-ready [data-revelar-grupo] > * {
   opacity: 0;
-  translate: 0 32px;
+  translate: 0 16px;
   transition: opacity var(--l-duration) var(--l-curve),
     translate var(--l-duration) var(--l-curve),
-    border-color 300ms ease,
-    transform 500ms var(--l-curve);
+    border-color 700ms ease,
+    transform 900ms var(--l-curve);
   transition-delay: calc(var(--ordem, 0) * var(--l-stagger));
 }
 
@@ -775,12 +776,12 @@
 
 @keyframes l-cue {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(6px); }
+  50% { transform: translateY(4px); }
 }
 
 @keyframes l-float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes l-trim {
@@ -789,12 +790,12 @@
 }
 
 @keyframes l-chip {
-  0%, 24% {
+  4%, 22% {
     border-color: var(--l-lime);
     background: var(--l-lime);
     color: var(--l-ink);
   }
-  25%, 100% {
+  0%, 34%, 100% {
     border-color: var(--l-line);
     background: transparent;
     color: var(--l-mist);
@@ -802,13 +803,13 @@
 }
 
 @keyframes l-meter {
-  from { transform: scaleY(0.25); }
+  from { transform: scaleY(0.45); }
   to { transform: scaleY(1); }
 }
 
 @keyframes l-beat {
-  0%, 40%, 100% { opacity: 0.25; transform: scale(0.8); }
-  15% { opacity: 1; transform: scale(1.15); }
+  0%, 60%, 100% { opacity: 0.3; transform: scale(0.92); }
+  25% { opacity: 1; transform: scale(1.04); }
 }
 
 @media (max-width: 900px) {
@@ -908,6 +909,7 @@
   transition: none;
 }
 
+/* No modo reduzido do sistema ficam só as fusões de opacidade. */
 @media (prefers-reduced-motion: reduce) {
   .landing *,
   .landing *::before,
@@ -915,10 +917,17 @@
     animation: none !important;
   }
 
+  .landing [data-capitulo] {
+    filter: none;
+    transform: none;
+  }
+
+  .l-window {
+    transform: none;
+  }
+
   .reveal-ready [data-revelar],
   .reveal-ready [data-revelar-grupo] > * {
-    opacity: 1;
     translate: 0 0;
-    transition: none;
   }
 }

@@ -262,7 +262,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           aria-valuemax={100}
         >
           <div
-            className="progress-fill h-full bg-[#A3E635] transition-all duration-200 rounded-full"
+            className="progress-fill h-full bg-[#A3E635] transition-[width] duration-700 ease-out rounded-full"
             style={{ width: `${Math.max(4, Math.min(100, progressPercent))}%` }}
           />
         </div>

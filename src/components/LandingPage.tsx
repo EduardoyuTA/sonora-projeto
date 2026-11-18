@@ -106,7 +106,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     const steps = stepsRef.current
     if (!root || !hero || !video || !steps) return
 
-    const reduced =
+    // A suavização só acompanha a rolagem da pessoa, sem movimento próprio.
+    // Por isso ela desliga apenas com a opção "Reduzir animações" do app.
+    const skipCountUp =
       reducedMotion ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -115,12 +117,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         section: hero,
         video,
         holdEnd: HERO_HOLD_END,
-        reducedMotion: reduced,
+        reducedMotion,
       }),
-      bindScrollScene({ section: steps, reducedMotion: reduced }),
+      bindScrollScene({ section: steps, reducedMotion }),
       waitForVideo(video, () => setIsReady(true)),
       primeVideoOnTouch(video),
-      bindReveals(root, reduced),
+      bindReveals(root, skipCountUp),
     ]
     return () => cleanups.forEach((cleanup) => cleanup())
   }, [reducedMotion])
@@ -224,15 +226,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="l-steps__copy">
               <p className="l-eyebrow">Como funciona</p>
               <div className="l-steps__texts">
-                <div data-capitulo="0-0.33">
+                <div data-capitulo="0-0.37">
                   <h2>Solte o vídeo.</h2>
                   <p>Arraste o arquivo para o estúdio ou escolha direto do seu dispositivo.</p>
                 </div>
-                <div data-capitulo="0.33-0.66">
+                <div data-capitulo="0.31-0.69">
                   <h2>Ajuste o som.</h2>
                   <p>Corte o trecho que importa, escolha o formato e deixe o volume no ponto.</p>
                 </div>
-                <div data-capitulo="0.66-1">
+                <div data-capitulo="0.63-1">
                   <h2>Baixe o áudio.</h2>
                   <p>Ouça o resultado, confira a forma de onda e leve o arquivo com você.</p>
                 </div>
@@ -247,7 +249,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span>Sonora Studio</span>
               </div>
               <div className="l-window__body">
-                <div className="l-pane" data-capitulo="0-0.33">
+                <div className="l-pane" data-capitulo="0-0.37">
                   <div className="l-drop">
                     <span className="l-drop__icon">
                       <Upload />
@@ -257,7 +259,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                 </div>
 
-                <div className="l-pane" data-capitulo="0.33-0.66">
+                <div className="l-pane" data-capitulo="0.31-0.69">
                   <div className="l-file">
                     <strong>entrevista-completa.mp4</strong>
                     <small>Trecho selecionado</small>
@@ -274,7 +276,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                 </div>
 
-                <div className="l-pane" data-capitulo="0.66-1">
+                <div className="l-pane" data-capitulo="0.63-1">
                   <div className="l-result">
                     <Capybara mood="success" size={64} still={reducedMotion} />
                     <div>
