@@ -1,14 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Gauge,
   Pause,
   Play,
+  Repeat,
   RotateCcw,
+  RotateCw,
   Volume1,
   Volume2,
   VolumeX,
 } from 'lucide-react'
 import { formatDuration } from '../utils/formatters'
+import { RangeInput } from './StudioControls'
 
 interface WaveformPlayerProps {
   audioUrl: string
@@ -17,9 +19,14 @@ interface WaveformPlayerProps {
   qualityLabel: string
   duration: number
   peaks: number[]
-  theme: 'light' | 'dark'
   onPlayStateChange?: (isPlaying: boolean) => void
 }
+
+const RATES = [0.75, 1, 1.25, 1.5, 2]
+const SKIP_SECONDS = 5
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value))
 
 export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   audioUrl,
@@ -28,319 +35,276 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
   qualityLabel,
   duration,
   peaks,
-  theme,
   onPlayStateChange,
 }) => {
-  const isDark = theme === 'dark'
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const waveformContainerRef = useRef<HTMLDivElement | null>(null)
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
+  const litRef = useRef<HTMLDivElement | null>(null)
+  const hoverRef = useRef<HTMLDivElement | null>(null)
+  const timeRef = useRef<HTMLElement | null>(null)
+  const isScrubbingRef = useRef(false)
 
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
   const [loadedDuration, setLoadedDuration] = useState(0)
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
-  const [playbackRate, setPlaybackRate] = useState<number>(1)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const [isLooping, setIsLooping] = useState(false)
 
   const resolvedDuration = loadedDuration > 0 ? loadedDuration : duration || 0
-  const rates = [0.75, 1, 1.25, 1.5, 2]
+  const bars = peaks.length > 0 ? peaks : Array<number>(64).fill(0.35)
 
   useEffect(() => {
     onPlayStateChange?.(isPlaying)
   }, [isPlaying, onPlayStateChange])
 
+  useEffect(() => () => onPlayStateChange?.(false), [onPlayStateChange])
+
+  // O progresso anda fora do React para ficar fluido durante a reprodução
   useEffect(() => {
-    return () => {
-      onPlayStateChange?.(false)
-    }
-  }, [onPlayStateChange])
-
-  const togglePlay = async () => {
-    const el = audioRef.current
-    if (!el) return
-    try {
-      if (el.paused) {
-        await el.play()
-        setIsPlaying(true)
-      } else {
-        el.pause()
-        setIsPlaying(false)
+    let frame = 0
+    const tick = () => {
+      const audio = audioRef.current
+      if (audio && resolvedDuration > 0) {
+        const ratio = clamp(audio.currentTime / resolvedDuration, 0, 1)
+        if (litRef.current) {
+          litRef.current.style.clipPath = `inset(0 ${100 - ratio * 100}% 0 0)`
+        }
+        if (timeRef.current) {
+          timeRef.current.textContent = formatDuration(audio.currentTime)
+        }
+        surfaceRef.current?.setAttribute('aria-valuenow', String(Math.round(audio.currentTime)))
+        surfaceRef.current?.setAttribute('aria-valuetext', formatDuration(audio.currentTime))
       }
-    } catch {
-      setIsPlaying(false)
+      frame = window.requestAnimationFrame(tick)
     }
+    frame = window.requestAnimationFrame(tick)
+    return () => window.cancelAnimationFrame(frame)
+  }, [resolvedDuration])
+
+  const togglePlay = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (audio.paused) audio.play().catch(() => setIsPlaying(false))
+    else audio.pause()
   }
 
-  const handleRestart = () => {
-    const el = audioRef.current
-    if (!el) return
-    el.currentTime = 0
-    setCurrentTime(0)
+  const seekTo = (time: number) => {
+    const audio = audioRef.current
+    if (audio) audio.currentTime = clamp(time, 0, resolvedDuration)
   }
 
-  const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = audioRef.current
-    const container = waveformContainerRef.current
-    if (!el || !container || resolvedDuration <= 0) return
-
-    const rect = container.getBoundingClientRect()
-    const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
-    const ratio = clickX / rect.width
-    const newTime = ratio * resolvedDuration
-    el.currentTime = newTime
-    setCurrentTime(newTime)
+  const skip = (seconds: number) => {
+    const audio = audioRef.current
+    if (audio) seekTo(audio.currentTime + seconds)
   }
 
-  const handleKeyDownSeek = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const el = audioRef.current
-    if (!el || resolvedDuration <= 0) return
+  const timeAt = (clientX: number) => {
+    const box = surfaceRef.current?.getBoundingClientRect()
+    if (!box || box.width === 0) return 0
+    return clamp((clientX - box.left) / box.width, 0, 1) * resolvedDuration
+  }
 
-    if (e.key === 'ArrowRight') {
-      e.preventDefault()
-      const next = Math.min(resolvedDuration, el.currentTime + 2)
-      el.currentTime = next
-      setCurrentTime(next)
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault()
-      const prev = Math.max(0, el.currentTime - 2)
-      el.currentTime = prev
-      setCurrentTime(prev)
-    } else if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault()
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || resolvedDuration <= 0) return
+    isScrubbingRef.current = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    seekTo(timeAt(event.clientX))
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const time = timeAt(event.clientX)
+    const hover = hoverRef.current
+    if (hover && resolvedDuration > 0) {
+      hover.style.left = `${(time / resolvedDuration) * 100}%`
+      hover.dataset.time = formatDuration(time)
+    }
+    if (isScrubbingRef.current) seekTo(time)
+  }
+
+  const stopScrubbing = () => {
+    isScrubbingRef.current = false
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      skip(event.shiftKey ? SKIP_SECONDS : 2)
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      skip(event.shiftKey ? -SKIP_SECONDS : -2)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      seekTo(0)
+    } else if (event.key === 'End') {
+      event.preventDefault()
+      seekTo(resolvedDuration)
+    } else if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault()
       togglePlay()
     }
   }
 
-  const handleVolumeChange = (val: number) => {
-    const el = audioRef.current
-    setVolume(val)
-    setIsMuted(val === 0)
-    if (el) {
-      el.volume = val
-      el.muted = val === 0
+  const handleVolumeChange = (percent: number) => {
+    const value = percent / 100
+    const audio = audioRef.current
+    setVolume(value)
+    setIsMuted(value === 0)
+    if (audio) {
+      audio.volume = value
+      audio.muted = value === 0
     }
   }
 
   const toggleMute = () => {
-    const el = audioRef.current
-    if (!el) return
-    const nextMuted = !isMuted
-    setIsMuted(nextMuted)
-    el.muted = nextMuted
+    const audio = audioRef.current
+    if (!audio) return
+    audio.muted = !isMuted
+    setIsMuted(!isMuted)
   }
 
-  const cyclePlaybackRate = () => {
-    const el = audioRef.current
-    const nextIndex = (rates.indexOf(playbackRate) + 1) % rates.length
-    const nextRate = rates[nextIndex]
-    setPlaybackRate(nextRate)
-    if (el) {
-      el.playbackRate = nextRate
-    }
+  const cycleRate = () => {
+    const next = RATES[(RATES.indexOf(playbackRate) + 1) % RATES.length]
+    setPlaybackRate(next)
+    if (audioRef.current) audioRef.current.playbackRate = next
   }
 
-  const progressRatio =
-    resolvedDuration > 0
-      ? Math.max(0, Math.min(1, currentTime / resolvedDuration))
-      : 0
+  const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2
 
-  const barList = peaks && peaks.length > 0 ? peaks : Array(64).fill(0.35)
+  const waveBars = (
+    <>
+      {bars.map((peak, index) => (
+        <i key={index} style={{ height: `${Math.max(14, Math.round(peak * 100))}%` }} />
+      ))}
+    </>
+  )
 
   return (
-    <div
-      className={`rounded-2xl border p-4 sm:p-5 transition-colors ${
-        isDark
-          ? 'bg-[#111316] border-[#1F2421] text-[#F3F4F6]'
-          : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315]'
-      }`}
-    >
+    <div className="st-player">
       <audio
         ref={audioRef}
         src={audioUrl}
         preload="metadata"
+        loop={isLooping}
         onLoadStart={() => {
           setIsPlaying(false)
-          setCurrentTime(0)
           setLoadedDuration(0)
         }}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => {
-          const dur = e.currentTarget.duration
-          if (Number.isFinite(dur) && dur > 0) {
-            setLoadedDuration(dur)
-          }
+        onLoadedMetadata={(event) => {
+          const value = event.currentTarget.duration
+          if (Number.isFinite(value) && value > 0) setLoadedDuration(value)
         }}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
       />
 
-      {/* Top Row: File Name & Format/Quality Badges */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isPlaying
-                  ? 'bg-[#A3E635] animate-ping'
-                  : isDark
-                    ? 'bg-[#374151]'
-                    : 'bg-[#CBD5E1]'
-              }`}
-            />
-            <p className="font-semibold text-sm truncate" title={fileName}>
-              {fileName}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-xs font-mono shrink-0">
-          <span className="px-2 py-0.5 rounded-md font-bold uppercase bg-[#BCEE45] text-[#111315]">
-            {format}
-          </span>
-          <span
-            className={`px-2 py-0.5 rounded-md border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
-                : 'bg-white border-[#E5E7EB] text-[#525866]'
-            }`}
-          >
-            {qualityLabel}
-          </span>
-        </div>
+      <div className="st-player__head">
+        <p className="text-strong min-w-0 truncate text-sm font-semibold" title={fileName}>
+          {fileName}
+        </p>
+        <span className="st-player__tags">
+          <b>{format}</b>
+          <span>{qualityLabel}</span>
+        </span>
       </div>
 
-      {/* Center Row: Play/Pause + Real Interactive Waveform + Time */}
-      <div className="flex items-center gap-3.5 sm:gap-4">
+      <div className="st-player__main">
         <button
           type="button"
+          className="st-transport__play"
           onClick={togglePlay}
-          className="w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center bg-[#BCEE45] hover:bg-[#A3E635] active:scale-95 text-[#111315] shadow-xs transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635]"
           aria-label={isPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
         >
-          {isPlaying ? (
-            <Pause className="w-5 h-5 fill-current" />
-          ) : (
-            <Play className="w-5 h-5 fill-current ml-0.5" />
-          )}
+          {isPlaying ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
         </button>
 
-        {/* Interactive Waveform Bars */}
-        <div className="flex-1 min-w-0">
-          <div
-            ref={waveformContainerRef}
-            onClick={handleSeekClick}
-            onKeyDown={handleKeyDownSeek}
-            tabIndex={0}
-            role="slider"
-            aria-label="Posição da reprodução na forma de onda"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(resolvedDuration)}
-            aria-valuenow={Math.round(currentTime)}
-            className="h-14 flex items-center justify-between gap-[2px] sm:gap-[3px] cursor-pointer select-none py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] rounded-lg px-1"
-          >
-            {barList.map((peak, idx) => {
-              const barProgress = idx / barList.length
-              const isPlayed = barProgress <= progressRatio
-              const heightPercent = Math.max(14, Math.round(peak * 100))
-
-              return (
-                <div
-                  key={idx}
-                  className="flex-1 h-full flex items-center justify-center"
-                >
-                  <div
-                    className={`w-full rounded-full transition-all duration-150 ${
-                      isPlayed
-                        ? isDark
-                          ? 'bg-[#BCEE45]'
-                          : 'bg-[#65A30D]'
-                        : isDark
-                          ? 'bg-[#2A302C] hover:bg-[#3E4552]'
-                          : 'bg-[#D1D5DB] hover:bg-[#A3AAA5]'
-                    }`}
-                    style={{
-                      height: `${heightPercent}%`,
-                    }}
-                  />
-                </div>
-              )
-            })}
+        <div
+          ref={surfaceRef}
+          className="st-player__wave"
+          role="slider"
+          tabIndex={0}
+          aria-label="Posição da reprodução"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(resolvedDuration)}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={stopScrubbing}
+          onPointerCancel={stopScrubbing}
+          onKeyDown={handleKeyDown}
+        >
+          <div className="st-bars st-bars--base" aria-hidden="true">
+            {waveBars}
           </div>
+          <div ref={litRef} className="st-bars st-bars--lit" aria-hidden="true">
+            {waveBars}
+          </div>
+          <div ref={hoverRef} className="st-hover" aria-hidden="true" />
         </div>
       </div>
 
-      {/* Bottom Controls Row: Time, Restart, Playback Speed, Volume */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-[#E5E7EB] dark:border-[#1F2421] text-xs">
-        <div className="flex items-center gap-3">
-          <span className="font-mono font-medium">
-            <strong className={isDark ? 'text-white' : 'text-[#111315]'}>
-              {formatDuration(currentTime)}
-            </strong>{' '}
-            <span className={isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'}>
-              / {formatDuration(resolvedDuration)}
-            </span>
-          </span>
+      <div className="st-player__controls">
+        <span className="st-clock">
+          <strong ref={timeRef}>00:00</strong>
+          <small>/ {formatDuration(resolvedDuration)}</small>
+        </span>
 
+        <div className="st-player__buttons">
           <button
             type="button"
-            onClick={handleRestart}
-            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-              isDark
-                ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
-                : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
-            }`}
-            title="Voltar ao início"
-            aria-label="Voltar ao início do áudio"
+            className="st-icon-btn"
+            onClick={() => skip(-SKIP_SECONDS)}
+            aria-label="Voltar 5 segundos"
+            title="Voltar 5 segundos"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw aria-hidden="true" />
           </button>
-
           <button
             type="button"
-            onClick={cyclePlaybackRate}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border font-mono font-medium transition-colors cursor-pointer ${
-              isDark
-                ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
-                : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
-            }`}
-            title="Alterar velocidade de reprodução"
-            aria-label={`Velocidade de reprodução ${playbackRate}x`}
+            className="st-icon-btn"
+            onClick={() => skip(SKIP_SECONDS)}
+            aria-label="Avançar 5 segundos"
+            title="Avançar 5 segundos"
           >
-            <Gauge className="w-3.5 h-3.5" />
-            <span>{playbackRate}x</span>
+            <RotateCw aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={`st-icon-btn ${isLooping ? 'is-active' : ''}`}
+            onClick={() => setIsLooping((value) => !value)}
+            aria-pressed={isLooping}
+            aria-label="Repetir o áudio"
+            title="Repetir"
+          >
+            <Repeat aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="st-chip st-chip--rate"
+            onClick={cycleRate}
+            aria-label={`Velocidade ${playbackRate}x. Clique para alterar`}
+            title="Alterar velocidade"
+          >
+            {playbackRate}x
           </button>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center gap-2">
+        <div className="st-player__volume">
           <button
             type="button"
+            className="st-icon-btn"
             onClick={toggleMute}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDark
-                ? 'text-[#A3AAA5] hover:text-white'
-                : 'text-[#525866] hover:text-[#111315]'
-            }`}
             aria-label={isMuted ? 'Ativar som' : 'Silenciar'}
           >
-            {isMuted || volume === 0 ? (
-              <VolumeX className="w-4 h-4 text-red-500" />
-            ) : volume < 0.5 ? (
-              <Volume1 className="w-4 h-4" />
-            ) : (
-              <Volume2 className="w-4 h-4" />
-            )}
+            <VolumeIcon aria-hidden="true" />
           </button>
-          <input
-            type="range"
+          <RangeInput
             min={0}
-            max={1}
-            step={0.05}
-            value={isMuted ? 0 : volume}
-            onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-            aria-label="Controle de volume do player"
-            className="w-20 sm:w-24 h-1.5 rounded-lg bg-gray-300 dark:bg-gray-700"
+            max={100}
+            step={5}
+            value={isMuted ? 0 : Math.round(volume * 100)}
+            aria-label="Volume do player"
+            onValueChange={handleVolumeChange}
           />
         </div>
       </div>

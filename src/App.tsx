@@ -38,7 +38,7 @@ import {
   Sidebar,
 } from './components/Navbar'
 import { UploadZone } from './components/UploadZone'
-import { ConversionSettingsPanel } from './components/ConversionSettingsPanel'
+import { StudioEditor } from './components/StudioEditor'
 import { ResultCard } from './components/ResultCard'
 import { HistoryView } from './components/HistoryView'
 import { SettingsView } from './components/SettingsView'
@@ -53,6 +53,7 @@ import {
   toAuthUser,
 } from './services/authService'
 import { runViewTransition } from './utils/viewTransition'
+import './studio.css'
 
 const LOGIN_PATH = '/entrar'
 
@@ -715,7 +716,7 @@ export function App() {
           )}
 
       {/* Main Content Container */}
-      <main key={activeTab} className="app-enter flex-1 w-full max-w-xl lg:max-w-5xl">
+      <main key={activeTab} className="app-enter flex-1 w-full max-w-2xl lg:max-w-6xl">
         {activeTab === 'converter' && (
           <div className="space-y-6">
             {/* Upload / Active Video Zone */}
@@ -746,14 +747,13 @@ export function App() {
             {/* Settings Panel when video is loaded */}
             {conversionState === 'loaded' && video && (
               <div className="app-enter app-enter--late">
-                <ConversionSettingsPanel
+                <StudioEditor
                   video={video}
                   config={config}
                   onChangeConfig={setConfig}
                   onStartConversion={handleStartConversion}
                   processingMode={settings.processingMode}
-                  isConverting={false}
-                  theme={settings.theme}
+                  onPlayStateChange={setIsAudioPlaying}
                 />
               </div>
             )}
@@ -784,7 +784,6 @@ export function App() {
               onRemoveItem={handleRemoveHistoryItem}
               onClearAll={handleClearAllHistory}
               onGoToConverter={() => selectTab('converter')}
-              theme={settings.theme}
               onPlayStateChange={setIsAudioPlaying}
             />
           </div>
@@ -801,7 +800,7 @@ export function App() {
       </main>
 
       <footer className="text-faint mt-10 py-6 text-xs">
-        <div className="max-w-xl lg:max-w-5xl flex flex-col lg:flex-row items-center justify-between gap-2 text-center lg:text-left border-t border-[var(--border)] pt-6">
+        <div className="max-w-2xl lg:max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-2 text-center lg:text-left border-t border-[var(--border)] pt-6">
           <span>
             <strong className="text-muted">SONORA</strong> — Conversão de vídeo para áudio com precisão e privacidade.
           </span>

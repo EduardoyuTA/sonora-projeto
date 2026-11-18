@@ -43,13 +43,13 @@ const STUDIO_TIPS: Dialogue[] = [
     eyebrow: 'Dica',
     title: 'Volume baixo no vídeo original?',
     description:
-      'Nas configurações avançadas, ligue "Normalizar volume (-16 LUFS)" para deixar o som equilibrado.',
+      'No painel Som, ligue "Normalizar volume" para deixar o áudio equilibrado.',
   },
   {
     eyebrow: 'Atalho',
     title: 'Dá para cortar só o refrão.',
     description:
-      'Nas configurações avançadas você escolhe o segundo exato de início e fim antes de converter.',
+      'Arraste as alças verdes na linha do tempo e ouça o corte antes de converter.',
   },
   {
     eyebrow: 'Privacidade',
@@ -271,7 +271,7 @@ export const MascotGuide: React.FC<MascotGuideProps> = ({
       return {
         eyebrow: 'Vídeo carregado',
         title: 'Como você quer o seu áudio?',
-        description: 'Escolha o formato. Nas opções avançadas dá para cortar e normalizar.',
+        description: 'Arraste as alças para cortar e escolha o formato ao lado.',
       }
     }
     return {

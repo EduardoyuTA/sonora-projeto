@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   AlertCircle,
   Lock,
@@ -54,41 +55,73 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   const isDark = theme === 'dark'
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const isBusy = state === 'converting' || state === 'validating'
+  const selectFileRef = useRef(onSelectFile)
+  const dragStateRef = useRef(onDragStateChange)
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (state === 'converting' || state === 'validating') return
-    if (!isDragging) {
-      setIsDragging(true)
-      onDragStateChange?.(true)
+  useEffect(() => {
+    selectFileRef.current = onSelectFile
+    dragStateRef.current = onDragStateChange
+  })
+
+  // Aceita soltar um vídeo em qualquer lugar da tela ou colar com Ctrl+V
+  useEffect(() => {
+    if (isBusy) return
+    let depth = 0
+    const hasFiles = (event: DragEvent) =>
+      Boolean(event.dataTransfer?.types.includes('Files'))
+    const setDragging = (value: boolean) => {
+      setIsDragging(value)
+      dragStateRef.current?.(value)
     }
-  }
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Ignore dragleave fired when the cursor moves onto a child element (avoids flicker)
-    const next = e.relatedTarget as Node | null
-    if (next && e.currentTarget.contains(next)) return
-    setIsDragging(false)
-    onDragStateChange?.(false)
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-    onDragStateChange?.(false)
-    if (state === 'converting' || state === 'validating') return
-
-    const droppedFiles = e.dataTransfer.files
-    if (droppedFiles && droppedFiles.length > 0) {
-      onSelectFile(droppedFiles[0], false)
+    const onDragEnter = (event: DragEvent) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      depth += 1
+      setDragging(true)
     }
-  }
+    const onDragOver = (event: DragEvent) => {
+      if (hasFiles(event)) event.preventDefault()
+    }
+    const onDragLeave = (event: DragEvent) => {
+      if (!hasFiles(event)) return
+      depth = Math.max(0, depth - 1)
+      if (depth === 0) setDragging(false)
+    }
+    const onDrop = (event: DragEvent) => {
+      if (!hasFiles(event)) return
+      event.preventDefault()
+      depth = 0
+      setDragging(false)
+      const file = event.dataTransfer?.files[0]
+      if (file) selectFileRef.current(file, false)
+    }
+    const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return
+      const file = event.clipboardData?.files[0]
+      if (file?.type.startsWith('video/')) {
+        event.preventDefault()
+        selectFileRef.current(file, false)
+      }
+    }
+
+    window.addEventListener('dragenter', onDragEnter)
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('dragleave', onDragLeave)
+    window.addEventListener('drop', onDrop)
+    window.addEventListener('paste', onPaste)
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter)
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('dragleave', onDragLeave)
+      window.removeEventListener('drop', onDrop)
+      window.removeEventListener('paste', onPaste)
+      dragStateRef.current?.(false)
+    }
+  }, [isBusy])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -104,14 +137,24 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
   // Hidden file input always present so user can pick another video anytime
   const hiddenInput = (
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v,.ogv,.3gp"
-      onChange={handleFileChange}
-      className="sr-only"
-      aria-label="Selecionar arquivo de vídeo do dispositivo"
-    />
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v,.ogv,.3gp"
+        onChange={handleFileChange}
+        className="sr-only"
+        aria-label="Selecionar arquivo de vídeo do dispositivo"
+      />
+      {isDragging &&
+        createPortal(
+          <div className="st-drop-overlay" aria-hidden="true">
+            <Upload />
+            Solte o vídeo aqui
+          </div>,
+          document.body
+        )}
+    </>
   )
 
   // 4. VALIDATING STATE
@@ -213,6 +256,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
   // 6. CONVERTING STATE
   if (state === 'converting' && video) {
+    const activeStepIndex = CONVERSION_STEPS.reduce(
+      (current, step, index) => (progressPercent >= step.from ? index : current),
+      0
+    )
     return (
       <div
         className={`rounded-3xl border p-7 sm:p-9 transition-all ${
@@ -222,6 +269,22 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         aria-live="polite"
       >
         {hiddenInput}
+        <ol className="st-progress-steps" aria-label="Etapas da conversão">
+          {CONVERSION_STEPS.map((step, index) => (
+            <li
+              key={step.label}
+              className={
+                index === activeStepIndex
+                  ? 'is-active'
+                  : index < activeStepIndex
+                    ? 'is-done'
+                    : ''
+              }
+            >
+              {step.label}
+            </li>
+          ))}
+        </ol>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center bg-[#BCEE45] text-[#111315]">
@@ -432,10 +495,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     e.replace('.', '').toUpperCase()
   ).join(', ')
 
-  const dragProps = {
-    onDragOver: handleDragOver,
-    onDragLeave: handleDragLeave,
-    onDrop: handleDrop,
+  const moveSpotlight = (event: React.PointerEvent<HTMLDivElement>) => {
+    const box = event.currentTarget.getBoundingClientRect()
+    event.currentTarget.style.setProperty('--x', `${event.clientX - box.left}px`)
+    event.currentTarget.style.setProperty('--y', `${event.clientY - box.top}px`)
   }
 
   return (
@@ -455,15 +518,14 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         </div>
 
         <div
-          {...dragProps}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className={`dropzone-dashed flex flex-col items-center gap-5 rounded-3xl px-5 py-10 sm:px-8 sm:py-14 text-center transition-colors duration-200 ${
+          onPointerMove={moveSpotlight}
+          onClick={(event) => {
+            if (!(event.target as HTMLElement).closest('button')) triggerFileBrowser()
+          }}
+          className={`st-dropzone dropzone-dashed flex flex-col items-center gap-5 rounded-3xl px-5 py-10 sm:px-8 sm:py-14 text-center transition-colors duration-500 ${
             isDragging
               ? 'is-dragging border-[var(--accent-text)]! bg-[var(--accent-soft)]!'
-              : isHovered
-                ? 'bg-[var(--surface-2)]!'
-                : ''
+              : ''
           }`}
         >
           <button
@@ -480,6 +542,9 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </h2>
             <p className="text-muted mt-1.5 text-sm">
               {formatsLabel} · até {MAX_FILE_SIZE_LABEL}
+            </p>
+            <p className="text-faint mt-1 hidden text-xs sm:block">
+              Clique, solte em qualquer lugar da tela ou cole com Ctrl + V
             </p>
           </div>
           <div className="flex w-full flex-col sm:w-auto sm:flex-row flex-wrap justify-center gap-3">
@@ -524,6 +589,12 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
     </>
   )
 }
+
+const CONVERSION_STEPS = [
+  { label: 'Preparando', from: 0 },
+  { label: 'Extraindo o áudio', from: 45 },
+  { label: 'Finalizando', from: 88 },
+]
 
 const FeatureItem: React.FC<{
   icon: React.ReactNode

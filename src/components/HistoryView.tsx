@@ -1,17 +1,17 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
-  Clock,
   Download,
   FileAudio,
-  HardDrive,
-  History,
+  Pause,
   Play,
+  Search,
   Sparkles,
   Trash2,
+  Undo2,
   X,
 } from 'lucide-react'
-import type { HistoryItem } from '../types/sonora'
+import type { AudioFormat, HistoryItem } from '../types/sonora'
 import { formatBytes, formatDuration } from '../utils/formatters'
 import { WaveformPlayer } from './WaveformPlayer'
 
@@ -22,8 +22,29 @@ interface HistoryViewProps {
   onRemoveItem: (id: string) => Promise<void>
   onClearAll: () => Promise<void>
   onGoToConverter: () => void
-  theme: 'light' | 'dark'
   onPlayStateChange?: (isPlaying: boolean) => void
+}
+
+type SortMode = 'recentes' | 'antigos' | 'maiores' | 'nome'
+
+const UNDO_WINDOW_MS = 6000
+
+const SORTERS: Record<SortMode, (a: HistoryItem, b: HistoryItem) => number> = {
+  recentes: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  antigos: (a, b) => a.createdAt.localeCompare(b.createdAt),
+  maiores: (a, b) => b.size - a.size,
+  nome: (a, b) => a.outputFileName.localeCompare(b.outputFileName, 'pt-BR'),
+}
+
+const formatDate = (iso: string) => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({
@@ -33,335 +54,328 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   onRemoveItem,
   onClearAll,
   onGoToConverter,
-  theme,
   onPlayStateChange,
 }) => {
-  const isDark = theme === 'dark'
+  const [query, setQuery] = useState('')
+  const [formatFilter, setFormatFilter] = useState<AudioFormat | 'todos'>('todos')
+  const [sortMode, setSortMode] = useState<SortMode>('recentes')
   const [confirmClearAll, setConfirmClearAll] = useState(false)
-  const [playingItemId, setPlayingItemId] = useState<string | null>(null)
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null)
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+  const [openItem, setOpenItem] = useState<{ id: string; url: string } | null>(null)
+  const [pendingRemoval, setPendingRemoval] = useState<string[]>([])
 
-  const handleTogglePreview = async (item: HistoryItem) => {
-    if (playingItemId === item.id) {
-      if (playingUrl) URL.revokeObjectURL(playingUrl)
-      setPlayingItemId(null)
-      setPlayingUrl(null)
-      return
-    }
+  const removalTimersRef = useRef(new Map<string, number>())
+  const openUrlRef = useRef<string | null>(null)
+  const removeItemRef = useRef(onRemoveItem)
 
-    const url = await onGetPlayableUrl(item)
-    if (url) {
-      if (playingUrl) URL.revokeObjectURL(playingUrl)
-      setPlayingItemId(item.id)
-      setPlayingUrl(url)
+  useEffect(() => {
+    removeItemRef.current = onRemoveItem
+    openUrlRef.current = openItem?.url ?? null
+  })
+
+  // Ao sair da tela, conclui as exclusões pendentes e libera o áudio aberto
+  useEffect(() => {
+    const timers = removalTimersRef.current
+    return () => {
+      timers.forEach((timer, id) => {
+        window.clearTimeout(timer)
+        void removeItemRef.current(id)
+      })
+      timers.clear()
+      if (openUrlRef.current) URL.revokeObjectURL(openUrlRef.current)
     }
+  }, [])
+
+  const closePlayer = () => {
+    if (openItem) URL.revokeObjectURL(openItem.url)
+    setOpenItem(null)
   }
 
-  const formatDatePtBr = (iso: string) => {
-    try {
-      const date = new Date(iso)
-      return new Intl.DateTimeFormat('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(date)
-    } catch {
-      return iso
+  const togglePlayer = async (item: HistoryItem) => {
+    if (openItem?.id === item.id) {
+      closePlayer()
+      return
     }
+    const url = await onGetPlayableUrl(item)
+    if (!url) return
+    if (openItem) URL.revokeObjectURL(openItem.url)
+    setOpenItem({ id: item.id, url })
+  }
+
+  const scheduleRemoval = (id: string) => {
+    if (openItem?.id === id) closePlayer()
+    setPendingRemoval((list) => [...list, id])
+    const timer = window.setTimeout(() => {
+      removalTimersRef.current.delete(id)
+      setPendingRemoval((list) => list.filter((itemId) => itemId !== id))
+      void onRemoveItem(id)
+    }, UNDO_WINDOW_MS)
+    removalTimersRef.current.set(id, timer)
+  }
+
+  const undoRemoval = (id: string) => {
+    window.clearTimeout(removalTimersRef.current.get(id))
+    removalTimersRef.current.delete(id)
+    setPendingRemoval((list) => list.filter((itemId) => itemId !== id))
+  }
+
+  const handleClearAll = async () => {
+    setConfirmClearAll(false)
+    closePlayer()
+    removalTimersRef.current.forEach((timer) => window.clearTimeout(timer))
+    removalTimersRef.current.clear()
+    setPendingRemoval([])
+    await onClearAll()
+  }
+
+  const availableFormats = useMemo(
+    () => Array.from(new Set(items.map((item) => item.format))),
+    [items]
+  )
+
+  const visibleItems = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase('pt-BR')
+    return items
+      .filter((item) => formatFilter === 'todos' || item.format === formatFilter)
+      .filter(
+        (item) =>
+          !term ||
+          item.outputFileName.toLocaleLowerCase('pt-BR').includes(term) ||
+          item.originalFileName.toLocaleLowerCase('pt-BR').includes(term)
+      )
+      .sort(SORTERS[sortMode])
+  }, [formatFilter, items, query, sortMode])
+
+  const totals = useMemo(
+    () => ({
+      duration: items.reduce((sum, item) => sum + item.duration, 0),
+      size: items.reduce((sum, item) => sum + item.size, 0),
+    }),
+    [items]
+  )
+
+  if (items.length === 0) {
+    return (
+      <section className="st-empty">
+        <span className="icon-orb h-14 w-14">
+          <FileAudio className="h-7 w-7" aria-hidden="true" />
+        </span>
+        <h1 className="text-strong text-xl font-semibold">
+          Seus áudios vão aparecer aqui.
+        </h1>
+        <p className="text-muted max-w-md text-sm">
+          Depois da primeira conversão, você pode ouvir e baixar de novo quando quiser.
+        </p>
+        <button
+          type="button"
+          onClick={onGoToConverter}
+          className="btn-lime inline-flex min-h-12 items-center gap-2 rounded-xl px-6 font-semibold cursor-pointer"
+        >
+          <Sparkles className="h-4 w-4" aria-hidden="true" />
+          Converter meu primeiro vídeo
+        </button>
+      </section>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Card */}
-      <div
-        className={`rounded-3xl border p-6 sm:p-8 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex flex-col gap-5">
+      <header className="st-page-head">
+        <div>
+          <h1 className="text-strong text-2xl font-semibold">Histórico</h1>
+          <p className="text-muted mt-1 text-sm">Guardado só neste navegador.</p>
+        </div>
+        <dl className="st-stats">
           <div>
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#4D7C0F] dark:text-[#BCEE45] font-semibold mb-1">
-              <History className="w-3.5 h-3.5" />
-              <span>Biblioteca Local</span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Histórico de Conversões
-            </h1>
-            <p
-              className={`text-sm mt-1 ${
-                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-              }`}
+            <dt>Áudios</dt>
+            <dd>{items.length}</dd>
+          </div>
+          <div>
+            <dt>Duração</dt>
+            <dd>{formatDuration(totals.duration)}</dd>
+          </div>
+          <div>
+            <dt>Espaço</dt>
+            <dd>{formatBytes(totals.size)}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <div className="st-filters">
+        <label className="st-search">
+          <Search aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar por nome"
+            aria-label="Buscar no histórico"
+          />
+        </label>
+
+        <div className="st-filter-chips" role="group" aria-label="Filtrar por formato">
+          {(['todos', ...availableFormats] as const).map((format) => (
+            <button
+              key={format}
+              type="button"
+              className={`st-chip ${formatFilter === format ? 'is-active' : ''}`}
+              aria-pressed={formatFilter === format}
+              onClick={() => setFormatFilter(format)}
             >
-              Seus arquivos são mantidos exclusivamente no armazenamento local do seu navegador para sua privacidade.
-            </p>
-          </div>
-
-          {items.length > 0 && (
-            <div className="shrink-0">
-              {!confirmClearAll ? (
-                <button
-                  type="button"
-                  onClick={() => setConfirmClearAll(true)}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-                    isDark
-                      ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400 hover:border-red-900/50'
-                      : 'border-[#E5E7EB] text-[#525866] hover:text-red-600 hover:border-red-200'
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Limpar histórico</span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setConfirmClearAll(false)
-                      if (playingUrl) URL.revokeObjectURL(playingUrl)
-                      setPlayingItemId(null)
-                      setPlayingUrl(null)
-                      await onClearAll()
-                    }}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                  >
-                    Confirmar exclusão total
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmClearAll(false)}
-                    className={`p-2 rounded-xl border text-xs cursor-pointer ${
-                      isDark
-                        ? 'border-[#2A302C] text-[#A3AAA5]'
-                        : 'border-[#E5E7EB] text-[#525866]'
-                    }`}
-                    aria-label="Cancelar"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+              {format === 'todos' ? 'Todos' : format.toUpperCase()}
+            </button>
+          ))}
         </div>
 
-        {/* Storage Disclaimer Banner */}
-        <div
-          className={`mt-5 p-3.5 rounded-2xl border flex items-center gap-3 text-xs ${
-            isDark
-              ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
-          }`}
+        <select
+          className="st-select"
+          value={sortMode}
+          onChange={(event) => setSortMode(event.target.value as SortMode)}
+          aria-label="Ordenar o histórico"
         >
-          <HardDrive className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45] shrink-0" />
-          <span>
-            O histórico utiliza o IndexedDB local deste dispositivo. Limpar os dados de navegação do navegador removerá os arquivos salvos aqui.
-          </span>
-        </div>
-      </div>
+          <option value="recentes">Mais recentes</option>
+          <option value="antigos">Mais antigos</option>
+          <option value="maiores">Maiores</option>
+          <option value="nome">Nome</option>
+        </select>
 
-      {/* Empty State */}
-      {items.length === 0 ? (
-        <div
-          className={`rounded-3xl border p-12 text-center ${
-            isDark
-              ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-              : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-          }`}
-        >
-          <div
-            className={`w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
-              isDark
-                ? 'bg-[#161A18] text-[#BCEE45]'
-                : 'bg-[#F1F3F5] text-[#111315]'
-            }`}
-          >
-            <FileAudio className="w-7 h-7" />
+        {confirmClearAll ? (
+          <div className="flex items-center gap-2">
+            <button type="button" className="st-danger" onClick={handleClearAll}>
+              Apagar tudo
+            </button>
+            <button
+              type="button"
+              className="st-icon-btn"
+              onClick={() => setConfirmClearAll(false)}
+              aria-label="Cancelar"
+            >
+              <X aria-hidden="true" />
+            </button>
           </div>
-          <h2 className="text-lg font-semibold mb-1">
-            Seus arquivos convertidos aparecerão aqui.
-          </h2>
-          <p
-            className={`text-sm max-w-md mx-auto mb-6 ${
-              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-            }`}
-          >
-            Assim que você converter seu primeiro vídeo em áudio, poderá ouvi-lo ou baixá-lo novamente a qualquer momento.
-          </p>
+        ) : (
           <button
             type="button"
-            onClick={onGoToConverter}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-sm bg-[#BCEE45] hover:bg-[#A3E635] text-[#111315] transition-all cursor-pointer"
+            className="st-chip"
+            onClick={() => setConfirmClearAll(true)}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Converter meu primeiro vídeo</span>
+            <Trash2 aria-hidden="true" />
+            Limpar
+          </button>
+        )}
+      </div>
+
+      {visibleItems.length === 0 ? (
+        <div className="st-empty st-empty--small">
+          <p className="text-muted text-sm">Nenhum áudio encontrado com esses filtros.</p>
+          <button
+            type="button"
+            className="st-chip"
+            onClick={() => {
+              setQuery('')
+              setFormatFilter('todos')
+            }}
+          >
+            Limpar filtros
           </button>
         </div>
       ) : (
-        <div className="app-stagger space-y-3">
-          {items.map((item) => {
-            const isPreviewOpen = playingItemId === item.id && Boolean(playingUrl)
-            const isConfirmingDelete = itemToDelete === item.id
+        <ul className="app-stagger flex flex-col gap-2.5">
+          {visibleItems.map((item) => {
+            const isOpen = openItem?.id === item.id
+
+            if (pendingRemoval.includes(item.id)) {
+              return (
+                <li key={item.id} className="st-history-item st-history-item--removed">
+                  <span className="text-muted min-w-0 truncate text-sm">
+                    {item.outputFileName} foi removido.
+                  </span>
+                  <button
+                    type="button"
+                    className="st-chip"
+                    onClick={() => undoRemoval(item.id)}
+                  >
+                    <Undo2 aria-hidden="true" />
+                    Desfazer
+                  </button>
+                </li>
+              )
+            }
 
             return (
-              <div
-                key={item.id}
-                className={`rounded-2xl border p-4 sm:p-5 transition-all ${
-                  isDark
-                    ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-                    : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-                    <div
-                      className={`w-11 h-11 rounded-xl shrink-0 flex items-center justify-center font-mono font-bold text-xs uppercase ${
-                        isDark
-                          ? 'bg-[#1F2421] text-[#BCEE45]'
-                          : 'bg-[#ECFCCB] text-[#3F6212]'
-                      }`}
+              <li key={item.id} className={`st-history-item ${isOpen ? 'is-open' : ''}`}>
+                <div className="st-history-item__row">
+                  <button
+                    type="button"
+                    className="st-history-item__play"
+                    disabled={!item.hasStoredBlob}
+                    onClick={() => togglePlayer(item)}
+                    aria-label={`${isOpen ? 'Fechar' : 'Ouvir'} ${item.outputFileName}`}
+                    title={item.hasStoredBlob ? undefined : 'Sem cópia salva neste navegador'}
+                  >
+                    {isOpen ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+                  </button>
+
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-strong truncate text-sm font-semibold" title={item.outputFileName}>
+                      {item.outputFileName}
+                    </h2>
+                    <p className="text-muted mt-0.5 truncate text-xs">
+                      {item.format.toUpperCase()} · {formatDuration(item.duration)} ·{' '}
+                      {formatBytes(item.size)} · {formatDate(item.createdAt)}
+                    </p>
+                  </div>
+
+                  <div className="st-mini-wave" aria-hidden="true">
+                    {item.peaks
+                      .filter((_, index) => index % 3 === 0)
+                      .map((peak, index) => (
+                        <i key={index} style={{ height: `${Math.max(12, peak * 100)}%` }} />
+                      ))}
+                  </div>
+
+                  {item.hasStoredBlob ? (
+                    <button
+                      type="button"
+                      className="st-icon-btn"
+                      onClick={() => onRedownload(item)}
+                      aria-label={`Baixar ${item.outputFileName}`}
+                      title="Baixar novamente"
                     >
-                      {item.format}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <h3
-                        className="font-semibold text-base truncate"
-                        title={item.outputFileName}
-                      >
-                        {item.outputFileName}
-                      </h3>
-                      <div
-                        className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs mt-0.5 ${
-                          isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-                        }`}
-                      >
-                        <span className="truncate max-w-[200px]" title={item.originalFileName}>
-                          Origem: {item.originalFileName}
-                        </span>
-                        <span>•</span>
-                        <span className="font-mono">
-                          {formatDuration(item.duration)}
-                        </span>
-                        <span>•</span>
-                        <span className="font-mono">{formatBytes(item.size)}</span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatDatePtBr(item.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Item Actions */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    {item.hasStoredBlob ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleTogglePreview(item)}
-                          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
-                            isPreviewOpen
-                              ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315] font-semibold'
-                              : isDark
-                                ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:bg-[#1F2421]'
-                                : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
-                          }`}
-                        >
-                          <Play className="w-3.5 h-3.5" />
-                          <span>{isPreviewOpen ? 'Fechar player' : 'Ouvir'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => onRedownload(item)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#BCEE45] hover:bg-[#A3E635] text-[#111315] transition-colors cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Baixar novamente</span>
-                        </button>
-                      </>
-                    ) : (
-                      <span
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs border ${
-                          isDark
-                            ? 'border-[#2A302C] text-[#A3AAA5]'
-                            : 'border-[#E5E7EB] text-[#525866]'
-                        }`}
-                        title="Você desativou o armazenamento de cópias de áudio nas configurações de privacidade."
-                      >
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>Apenas registro</span>
-                      </span>
-                    )}
-
-                    {!isConfirmingDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => setItemToDelete(item.id)}
-                        className={`p-2 rounded-xl border transition-colors cursor-pointer ${
-                          isDark
-                            ? 'border-[#2A302C] text-[#A3AAA5] hover:text-red-400'
-                            : 'border-[#E5E7EB] text-[#525866] hover:text-red-600'
-                        }`}
-                        aria-label={`Remover ${item.outputFileName} do histórico`}
-                        title="Remover item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            setItemToDelete(null)
-                            if (playingItemId === item.id) {
-                              if (playingUrl) URL.revokeObjectURL(playingUrl)
-                              setPlayingItemId(null)
-                              setPlayingUrl(null)
-                            }
-                            await onRemoveItem(item.id)
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-                        >
-                          Excluir
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setItemToDelete(null)}
-                          className="p-1.5 rounded-xl border text-xs cursor-pointer"
-                          aria-label="Cancelar exclusão"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      <Download aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <span className="st-icon-btn is-static" title="Apenas registro, sem cópia do áudio">
+                      <AlertTriangle aria-hidden="true" />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="st-icon-btn st-icon-btn--danger"
+                    onClick={() => scheduleRemoval(item.id)}
+                    aria-label={`Remover ${item.outputFileName}`}
+                    title="Remover"
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </button>
                 </div>
 
-                {/* Inline Waveform Player when User Clicks 'Ouvir' */}
-                {isPreviewOpen && playingUrl && (
-                  <div className="mt-4 pt-4 border-t border-[#E5E7EB] dark:border-[#1F2421]">
+                {isOpen && openItem && (
+                  <div className="app-enter mt-3">
                     <WaveformPlayer
-                      audioUrl={playingUrl}
+                      audioUrl={openItem.url}
                       fileName={item.outputFileName}
                       format={item.format}
                       qualityLabel={item.qualityLabel}
                       duration={item.duration}
                       peaks={item.peaks}
-                      theme={theme}
                       onPlayStateChange={onPlayStateChange}
                     />
                   </div>
                 )}
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
     </div>
   )
