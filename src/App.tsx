@@ -57,6 +57,15 @@ import './studio.css'
 
 const LOGIN_PATH = '/entrar'
 
+// Enquanto as contas não estão ativas, o estúdio abre direto
+const LOCAL_STUDIO_USER: AuthUser = {
+  email: '',
+  name: 'Visitante',
+  provider: 'guest',
+  rememberMe: true,
+  loggedInAt: '',
+}
+
 const LandingPage = lazy(() =>
   import('./components/LandingPage').then((module) => ({
     default: module.LandingPage,
@@ -622,18 +631,23 @@ export function App() {
       )
     }
 
-    return (
-      <LoginView
-        onSuccessLogin={handleLoginSuccess}
-        onPasswordUpdated={handlePasswordUpdated}
-        isPasswordRecovery={isPasswordRecovery}
-        initialError={authRedirectError}
-        theme={settings.theme}
-        onToggleTheme={handleToggleTheme}
-        reducedMotion={settings.reducedMotion}
-      />
-    )
+    if (isAuthConfigured || isPasswordRecovery) {
+      return (
+        <LoginView
+          onSuccessLogin={handleLoginSuccess}
+          onPasswordUpdated={handlePasswordUpdated}
+          isPasswordRecovery={isPasswordRecovery}
+          initialError={authRedirectError}
+          theme={settings.theme}
+          onToggleTheme={handleToggleTheme}
+          reducedMotion={settings.reducedMotion}
+        />
+      )
+    }
   }
+
+  const studioUser = authUser ?? LOCAL_STUDIO_USER
+  const studioLogout = studioUser.provider === 'guest' ? undefined : handleLogout
 
   const isConverting = conversionState === 'converting'
   // Sucesso mantém o mesmo cartão do vídeo carregado, sem repetir a entrada
@@ -698,16 +712,16 @@ export function App() {
             onSelectTab={selectTab}
             theme={settings.theme}
             onToggleTheme={handleToggleTheme}
-            user={authUser}
-            onLogout={handleLogout}
+            user={studioUser}
+            onLogout={studioLogout}
           />
           <DesktopTopBar
             activeTab={activeTab}
             conversionState={conversionState}
             theme={settings.theme}
             onToggleTheme={handleToggleTheme}
-            user={authUser}
-            onLogout={handleLogout}
+            user={studioUser}
+            onLogout={studioLogout}
           />
           {activeTab === 'converter' && (
             <div className="lg:hidden pb-5">

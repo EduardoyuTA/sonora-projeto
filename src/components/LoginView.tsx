@@ -18,13 +18,11 @@ import {
   Sun,
   User,
   UserPlus,
-  UserRound,
 } from 'lucide-react'
 import type { AuthUser, MascotMood } from '../types/sonora'
 import { SonoraBrandMark } from './SonoraBrandMark'
 import { Capybara } from './Capybara'
 import {
-  isAuthConfigured,
   sendPasswordReset,
   signInWithEmail,
   signInWithGoogle,
@@ -343,7 +341,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const prefersReducedMotion = reducedMotion || systemReducedMotion
 
   const isBusy = isSubmitting || isGoogleLoading
-  const accountsEnabled = isAuthConfigured || mode === 'reset'
   const isDark = theme === 'dark'
   const needsNewPassword = mode === 'register' || mode === 'reset'
 
@@ -453,17 +450,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     }
   }
 
-  const handleGuest = () => {
-    if (isBusy) return
-    onSuccessLogin({
-      email: '',
-      name: 'Visitante',
-      provider: 'guest',
-      rememberMe: true,
-      loggedInAt: new Date().toISOString(),
-    })
-  }
-
   // Pose e fala da capivara conforme o que a pessoa está fazendo
   const resolveMascot = (): { mood: MascotMood; message: string; isError: boolean } => {
     if (formError) {
@@ -494,13 +480,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
       return {
         mood: 'converting',
         message: 'Conferindo com o servidor…',
-        isError: false,
-      }
-    }
-    if (!accountsEnabled) {
-      return {
-        mood: 'loaded',
-        message: 'As contas ainda não estão ativas, mas o estúdio já está aberto!',
         isError: false,
       }
     }
@@ -833,26 +812,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     </div>
   )
 
-  const renderAccountsDisabled = () => (
-    <div className="login-fade-in text-center">
-      <h1
-        id="sonora-login-heading"
-        className="text-2xl sm:text-[28px] font-bold tracking-tight text-(--lg-text)"
-      >
-        Bem-vindo ao SONORA
-      </h1>
-      <p className="mt-1.5 text-sm text-(--lg-muted) leading-relaxed">
-        O login com conta ainda não está disponível neste site. Você já pode
-        converter seus vídeos sem cadastro.
-      </p>
-      {import.meta.env.DEV && (
-        <p className="mt-3 rounded-xl border border-dashed border-(--lg-field-border) px-3 py-2 text-[11px] text-(--lg-muted) font-mono">
-          Dev: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.local
-        </p>
-      )}
-    </div>
-  )
-
   return (
     <div
       className={`login-theme-${isDark ? 'dark' : 'light'} ${prefersReducedMotion ? 'motion-reduce' : ''} relative min-h-screen w-full text-(--lg-text) overflow-x-hidden selection:bg-[#C5F04A] selection:text-[#090B0C]`}
@@ -885,29 +844,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </button>
           <LoginMascot {...mascot} />
 
-          {emailSent
-            ? renderEmailSent()
-            : accountsEnabled
-              ? renderForm()
-              : renderAccountsDisabled()}
-
-          {/* Entrar sem conta */}
-          {mode !== 'reset' && !emailSent && (
-            <div className="mt-4 pt-4 border-t border-(--lg-divider)">
-              <button
-                type="button"
-                onClick={handleGuest}
-                disabled={isBusy}
-                className={accountsEnabled ? secondaryButtonClass : primaryButtonClass}
-              >
-                <UserRound aria-hidden="true" className="w-4 h-4" />
-                Entrar sem conta
-              </button>
-              <p className="mt-2 text-center text-[11px] text-(--lg-muted)">
-                Seu histórico fica salvo só neste navegador.
-              </p>
-            </div>
-          )}
+          {emailSent ? renderEmailSent() : renderForm()}
 
           <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-(--lg-muted)">
             <Shield aria-hidden="true" className="w-4 h-4 text-(--lg-accent-text) shrink-0" />

@@ -75,7 +75,7 @@ const QUESTIONS = [
   {
     question: 'Preciso criar uma conta?',
     answer:
-      'Não. Você pode entrar sem conta, e nesse caso o histórico fica guardado apenas no navegador que você está usando.',
+      'Não. É só abrir o estúdio e começar. O histórico fica guardado apenas no navegador que você está usando.',
   },
   {
     question: 'Meu vídeo fica guardado em algum servidor?',
@@ -152,7 +152,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <a href="#perguntas">Perguntas</a>
         </nav>
         <button type="button" className="l-btn l-btn--small" onClick={onEnter}>
-          Entrar
+          Abrir estúdio
         </button>
       </header>
 
@@ -376,7 +376,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <article className="l-card">
               <ShieldCheck className="l-card__icon" aria-hidden="true" />
               <h3>Histórico com você</h3>
-              <p>Sem conta, seu histórico de conversões fica apenas neste navegador.</p>
+              <p>Seu histórico de conversões fica apenas neste navegador.</p>
             </article>
           </div>
         </section>
