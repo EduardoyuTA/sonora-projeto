@@ -1,23 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Activity,
-  CheckCircle2,
-  Cpu,
-  Globe,
-  HelpCircle,
+  Check,
   Moon,
   RefreshCw,
-  Server,
-  Shield,
-  Sliders,
   Sun,
   Trash2,
+  X,
 } from 'lucide-react'
 import type {
   AppSettings,
   AudioFormat,
-  BitrateKbps,
   NativeEngineHealth,
+  ProcessingMode,
   QualityTier,
 } from '../types/sonora'
 import {
@@ -25,6 +20,7 @@ import {
   getLastKnownEngineHealth,
 } from '../services/audioConversionEngine'
 import { MAX_FILE_SIZE_LABEL, mapTierToBitrate } from '../utils/formatters'
+import { SwitchRow } from './StudioControls'
 
 interface SettingsViewProps {
   settings: AppSettings
@@ -33,618 +29,331 @@ interface SettingsViewProps {
   onClearHistory: () => Promise<void>
 }
 
+const SECTIONS = [
+  { id: 'ajustes-aparencia', label: 'Aparência' },
+  { id: 'ajustes-conversao', label: 'Conversão' },
+  { id: 'ajustes-privacidade', label: 'Privacidade' },
+  { id: 'ajustes-ajuda', label: 'Ajuda' },
+]
+
+const FORMATS: AudioFormat[] = ['mp3', 'wav', 'm4a', 'aac']
+
+const QUALITIES: { id: QualityTier; label: string; detail: string }[] = [
+  { id: 'economica', label: 'Econômica', detail: '128 kbps' },
+  { id: 'padrao', label: 'Padrão', detail: '192 kbps' },
+  { id: 'alta', label: 'Alta', detail: '320 kbps' },
+]
+
+const MODES: { id: ProcessingMode; label: string; detail: string }[] = [
+  {
+    id: 'hybrid-auto',
+    label: 'Híbrido (recomendado)',
+    detail:
+      'Usa o servidor FFmpeg quando necessário e apaga o arquivo após a conversão. Aceita MP3, WAV, M4A e AAC.',
+  },
+  {
+    id: 'browser-only',
+    label: 'Somente no navegador',
+    detail: 'O vídeo não sai do dispositivo. Aceita MP3 e WAV.',
+  },
+]
+
+const SAVED_BADGE_MS = 1800
+
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   onUpdateSettings,
   historyCount,
   onClearHistory,
 }) => {
-  const isDark = settings.theme === 'dark'
-  const [clearedBanner, setClearedBanner] = useState(false)
+  const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
+  const [showSaved, setShowSaved] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [apiUrlInput, setApiUrlInput] = useState(settings.customApiUrl || '')
   const [engineHealth, setEngineHealth] = useState<NativeEngineHealth>(() =>
     getLastKnownEngineHealth()
   )
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const savedTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     let active = true
-    checkNativeEngineHealth(settings.customApiUrl, 8000).then((res) => {
-      if (active) setEngineHealth(res)
+    checkNativeEngineHealth(settings.customApiUrl, 8000).then((result) => {
+      if (active) setEngineHealth(result)
     })
     return () => {
       active = false
     }
   }, [settings.customApiUrl])
 
-  const handleTestAndSaveApiUrl = async () => {
+  useEffect(
+    () => () => {
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current)
+    },
+    []
+  )
+
+  const update = (patch: Partial<AppSettings>) => {
+    onUpdateSettings({ ...settings, ...patch })
+    setShowSaved(true)
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current)
+    savedTimerRef.current = window.setTimeout(() => setShowSaved(false), SAVED_BADGE_MS)
+  }
+
+  const goToSection = (id: string) => {
+    setActiveSection(id)
+    document.getElementById(id)?.scrollIntoView({ block: 'start' })
+  }
+
+  const testConnection = async () => {
     const cleanUrl = apiUrlInput.trim().replace(/\/+$/, '')
     setApiUrlInput(cleanUrl)
-    onUpdateSettings({
-      ...settings,
-      customApiUrl: cleanUrl,
-    })
+    update({ customApiUrl: cleanUrl })
     setIsTestingConnection(true)
-    const health = await checkNativeEngineHealth(cleanUrl, 12000)
-    setEngineHealth(health)
+    setEngineHealth(await checkNativeEngineHealth(cleanUrl, 12000))
     setIsTestingConnection(false)
   }
 
-  const handleFormatChange = (fmt: AudioFormat) => {
-    onUpdateSettings({
-      ...settings,
-      defaultFormat: fmt,
-    })
-  }
-
-  const handleQualityChange = (tier: QualityTier) => {
-    const nextBitrate: BitrateKbps = mapTierToBitrate(tier, settings.defaultBitrate)
-    onUpdateSettings({
-      ...settings,
-      defaultQualityTier: tier,
-      defaultBitrate: nextBitrate,
-    })
-  }
-
-  const handleClear = async () => {
+  const clearHistory = async () => {
+    setConfirmClear(false)
     await onClearHistory()
-    setClearedBanner(true)
-    window.setTimeout(() => setClearedBanner(false), 3000)
   }
+
+  const engineLabel =
+    isTestingConnection || engineHealth.status === 'checking'
+      ? 'Verificando conexão…'
+      : engineHealth.status === 'online'
+        ? `Servidor online${engineHealth.latencyMs ? ` · ${engineHealth.latencyMs} ms` : ''}`
+        : 'Servidor indisponível, usando o navegador'
 
   return (
-    <div className="app-stagger space-y-6">
-      {/* Header */}
-      <div
-        className={`rounded-3xl border p-6 sm:p-8 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#4D7C0F] dark:text-[#BCEE45] font-semibold mb-1">
-          <Sliders className="w-3.5 h-3.5" />
-          <span>Preferências do Sistema</span>
+    <div className="flex flex-col gap-5">
+      <header className="st-page-head">
+        <div>
+          <h1 className="text-strong text-2xl font-semibold">Ajustes</h1>
+          <p className="text-muted mt-1 text-sm">Tudo é salvo automaticamente.</p>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Configurações do Aplicativo
-        </h1>
-        <p
-          className={`text-sm mt-1 ${
-            isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-          }`}
-        >
-          Personalize aparência, formato padrão, privacidade e motor de processamento. Todas as alterações são salvas automaticamente.
+        <span className={`st-saved ${showSaved ? 'is-visible' : ''}`} role="status">
+          {showSaved && (
+            <>
+              <Check aria-hidden="true" />
+              Salvo
+            </>
+          )}
+        </span>
+      </header>
+
+      <nav className="st-section-nav" aria-label="Seções dos ajustes">
+        {SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            className={`st-chip ${activeSection === section.id ? 'is-active' : ''}`}
+            aria-current={activeSection === section.id ? 'true' : undefined}
+            onClick={() => goToSection(section.id)}
+          >
+            {section.label}
+          </button>
+        ))}
+      </nav>
+
+      <section id="ajustes-aparencia" className="st-settings-card">
+        <h2>Aparência</h2>
+        <div className="st-theme-grid" role="radiogroup" aria-label="Tema da interface">
+          {(
+            [
+              { id: 'light', label: 'Claro', Icon: Sun },
+              { id: 'dark', label: 'Escuro', Icon: Moon },
+            ] as const
+          ).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={settings.theme === id}
+              className={`st-theme st-theme--${id} ${settings.theme === id ? 'is-active' : ''}`}
+              onClick={() => update({ theme: id })}
+            >
+              <span className="st-theme__preview" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="st-theme__label">
+                <Icon aria-hidden="true" />
+                {label}
+              </span>
+            </button>
+          ))}
+        </div>
+        <SwitchRow
+          label="Reduzir animações"
+          description="Desliga os movimentos e as transições da interface."
+          checked={settings.reducedMotion}
+          onChange={(reducedMotion) => update({ reducedMotion })}
+        />
+      </section>
+
+      <section id="ajustes-conversao" className="st-settings-card">
+        <h2>Conversão</h2>
+
+        <h3>Formato padrão</h3>
+        <div className="st-filter-chips" role="radiogroup" aria-label="Formato padrão">
+          {FORMATS.map((format) => (
+            <button
+              key={format}
+              type="button"
+              role="radio"
+              aria-checked={settings.defaultFormat === format}
+              className={`st-chip ${settings.defaultFormat === format ? 'is-active' : ''}`}
+              onClick={() => update({ defaultFormat: format })}
+            >
+              {format.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <h3>Qualidade padrão</h3>
+        <div className="st-option-grid st-option-grid--three" role="radiogroup" aria-label="Qualidade padrão">
+          {QUALITIES.map((quality) => (
+            <button
+              key={quality.id}
+              type="button"
+              role="radio"
+              aria-checked={settings.defaultQualityTier === quality.id}
+              className={`st-option ${settings.defaultQualityTier === quality.id ? 'is-active' : ''}`}
+              onClick={() =>
+                update({
+                  defaultQualityTier: quality.id,
+                  defaultBitrate: mapTierToBitrate(quality.id, settings.defaultBitrate),
+                })
+              }
+            >
+              <strong>{quality.label}</strong>
+              <small>{quality.detail}</small>
+            </button>
+          ))}
+        </div>
+
+        <h3>Onde converter</h3>
+        <div className="st-option-grid" role="radiogroup" aria-label="Onde converter">
+          {MODES.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              role="radio"
+              aria-checked={settings.processingMode === mode.id}
+              className={`st-option ${settings.processingMode === mode.id ? 'is-active' : ''}`}
+              onClick={() => update({ processingMode: mode.id })}
+            >
+              <strong>{mode.label}</strong>
+              <small>{mode.detail}</small>
+            </button>
+          ))}
+        </div>
+
+        <h3>Servidor de conversão</h3>
+        <p className={`st-engine st-engine--${engineHealth.status}`} role="status">
+          <Activity aria-hidden="true" />
+          {engineLabel}
         </p>
-      </div>
-
-      {/* 1. Aparência e Idioma */}
-      <section
-        className={`rounded-3xl border p-6 sm:p-7 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Sun className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-          <span>Aparência, Acessibilidade e Idioma</span>
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Theme Selector */}
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
-              Tema da Interface
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onUpdateSettings({ ...settings, theme: 'light' })}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  settings.theme === 'light'
-                    ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
-                    : isDark
-                      ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
-                      : 'border-[#E5E7EB] text-[#525866]'
-                }`}
-              >
-                <Sun className="w-4 h-4" />
-                <span>Claro (Padrão)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onUpdateSettings({ ...settings, theme: 'dark' })}
-                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  settings.theme === 'dark'
-                    ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
-                    : isDark
-                      ? 'border-[#2A302C] text-[#A3AAA5]'
-                      : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
-                }`}
-              >
-                <Moon className="w-4 h-4" />
-                <span>Escuro</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Language Selector */}
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
-              Idioma do Sistema
-            </div>
-            <div className="flex items-center justify-between py-2 px-3 rounded-xl border bg-white/50 dark:bg-[#121513] border-[#E5E7EB] dark:border-[#2A302C]">
-              <span className="inline-flex items-center gap-2 text-xs font-semibold">
-                <Globe className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-                <span>Português (Brasil) — pt-BR</span>
-              </span>
-              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#BCEE45] text-[#111315] font-bold">
-                Ativo
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Reduced Motion Option */}
-        <label
-          className={`mt-4 flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
-            isDark
-              ? 'bg-[#161A18] border-[#2A302C]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB]'
-          }`}
-        >
-          <div>
-            <div className="text-sm font-semibold">
-              Reduzir animações e movimento
-            </div>
-            <div
-              className={`text-xs ${
-                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-              }`}
-            >
-              Simplifica transições visuais para maior conforto visual
-            </div>
-          </div>
+        <div className="st-url-row">
           <input
-            type="checkbox"
-            checked={settings.reducedMotion}
-            onChange={(e) =>
-              onUpdateSettings({
-                ...settings,
-                reducedMotion: e.target.checked,
-              })
-            }
-            className="w-4 h-4 accent-[#65A30D] rounded cursor-pointer"
+            type="url"
+            value={apiUrlInput}
+            onChange={(event) => setApiUrlInput(event.target.value)}
+            placeholder="https://sonora-ffmpeg-api.onrender.com"
+            aria-label="Endereço do servidor FFmpeg"
           />
-        </label>
+          <button
+            type="button"
+            className="btn-lime inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold cursor-pointer disabled:opacity-60"
+            onClick={testConnection}
+            disabled={isTestingConnection}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isTestingConnection ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+            {isTestingConnection ? 'Testando…' : 'Salvar e testar'}
+          </button>
+        </div>
+
+        <SwitchRow
+          label="Lembrar as últimas opções"
+          description="Mantém o último formato e a qualidade ao abrir um novo vídeo."
+          checked={settings.rememberLastConfig}
+          onChange={(rememberLastConfig) => update({ rememberLastConfig })}
+        />
       </section>
 
-      {/* 2. Preferências Padrão de Conversão e Conexão Render */}
-      <section
-        className={`rounded-3xl border p-6 sm:p-7 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-          <span>Padrões de Conversão e Motor de Áudio</span>
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {/* Default Format */}
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
-              Formato Padrão
-            </label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {(['mp3', 'wav', 'm4a', 'aac'] as AudioFormat[]).map((fmt) => (
-                <button
-                  key={fmt}
-                  type="button"
-                  onClick={() => handleFormatChange(fmt)}
-                  className={`py-2 rounded-xl font-mono text-xs font-bold uppercase border transition-all cursor-pointer ${
-                    settings.defaultFormat === fmt
-                      ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
-                      : isDark
-                        ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
-                        : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
-                  }`}
-                >
-                  {fmt}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Default Quality */}
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <label className="block text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
-              Qualidade Padrão
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {(
-                [
-                  { id: 'economica', label: '128k (Eco)' },
-                  { id: 'padrao', label: '192k (Padrão)' },
-                  { id: 'alta', label: '320k (Alta)' },
-                ] as { id: QualityTier; label: string }[]
-              ).map((q) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => handleQualityChange(q.id)}
-                  className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    settings.defaultQualityTier === q.id
-                      ? 'bg-[#BCEE45] border-[#A3E635] text-[#111315]'
-                      : isDark
-                        ? 'border-[#2A302C] text-[#A3AAA5] hover:text-white'
-                        : 'border-[#E5E7EB] text-[#525866] hover:text-[#111315]'
-                  }`}
-                >
-                  {q.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Processing Mode Selector */}
-        <div
-          className={`p-4 rounded-2xl border mb-4 ${
-            isDark
-              ? 'bg-[#161A18] border-[#2A302C]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB]'
-          }`}
-        >
-          <div className="text-xs font-mono uppercase tracking-wider mb-2 text-[#525866] dark:text-[#A3AAA5]">
-            Arquitetura de Processamento
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() =>
-                onUpdateSettings({ ...settings, processingMode: 'hybrid-auto' })
-              }
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                settings.processingMode === 'hybrid-auto'
-                  ? isDark
-                    ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white'
-                    : 'bg-[#ECFCCB]/70 border-[#65A30D] text-[#111315]'
-                  : isDark
-                    ? 'border-[#2A302C] text-[#A3AAA5]'
-                    : 'border-[#E5E7EB] text-[#525866]'
-              }`}
-            >
-              <div className="font-semibold text-xs mb-0.5">
-                Híbrido Nativo FFmpeg + Web Audio (Recomendado)
-              </div>
-              <div className="text-[11px] opacity-80">
-                Usa o motor FFmpeg (Render ou local) para máxima velocidade e suporte a MP3, WAV, M4A e AAC sem retenção de arquivos.
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                onUpdateSettings({
-                  ...settings,
-                  processingMode: 'browser-only',
-                })
-              }
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                settings.processingMode === 'browser-only'
-                  ? isDark
-                    ? 'bg-[#BCEE45]/12 border-[#BCEE45] text-white'
-                    : 'bg-[#ECFCCB]/70 border-[#65A30D] text-[#111315]'
-                  : isDark
-                    ? 'border-[#2A302C] text-[#A3AAA5]'
-                    : 'border-[#E5E7EB] text-[#525866]'
-              }`}
-            >
-              <div className="font-semibold text-xs mb-0.5">
-                100% No Navegador (Web Audio + LameJS)
-              </div>
-              <div className="text-[11px] opacity-80">
-                Decodifica e codifica MP3/WAV inteiramente na memória RAM da aba do navegador.
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Render / Native FFmpeg API Connection Panel */}
-        <div
-          className={`p-4 rounded-2xl border mb-4 ${
-            isDark
-              ? 'bg-[#161A18] border-[#2A302C]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB]'
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#525866] dark:text-[#A3AAA5]">
-              <Server className="w-3.5 h-3.5 text-[#4D7C0F] dark:text-[#BCEE45]" />
-              <span>Conexão com Servidor FFmpeg (Render / Local)</span>
-            </div>
-
-            <span
-              className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2.5 py-0.5 rounded-full border ${
-                engineHealth.status === 'online'
-                  ? isDark
-                    ? 'bg-[#BCEE45]/15 border-[#BCEE45]/50 text-[#BCEE45]'
-                    : 'bg-[#ECFCCB] border-[#65A30D]/40 text-[#3F6212]'
-                  : isDark
-                    ? 'bg-[#1F2421] border-[#374151] text-[#A3AAA5]'
-                    : 'bg-white border-[#D1D5DB] text-[#525866]'
-              }`}
-            >
-              <Activity className="w-3 h-3" />
-              {engineHealth.status === 'online' ? (
-                <span>
-                  FFmpeg Online
-                  {engineHealth.latencyMs ? ` (${engineHealth.latencyMs} ms)` : ''}
-                </span>
-              ) : engineHealth.status === 'checking' || isTestingConnection ? (
-                <span>Verificando conexão...</span>
-              ) : (
-                <span>Modo Navegador Local Ativo</span>
-              )}
-            </span>
-          </div>
-
-          <p
-            className={`text-xs mb-3 ${
-              isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-            }`}
-          >
-            Se o backend FFmpeg estiver hospedado no Render, informe a URL abaixo (ou defina{' '}
-            <code className="font-mono text-[11px]">VITE_API_BASE_URL</code> na Vercel). Em branco, usa o servidor local ou o motor Web Audio do navegador.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              value={apiUrlInput}
-              onChange={(e) => setApiUrlInput(e.target.value)}
-              placeholder="https://sonora-ffmpeg-api.onrender.com"
-              className={`flex-1 px-3.5 py-2 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-[#A3E635] ${
-                isDark
-                  ? 'bg-[#121513] border-[#2A302C] text-white placeholder-[#6B7280]'
-                  : 'bg-white border-[#D1D5DB] text-[#111315] placeholder-[#A3AAA5]'
-              }`}
-            />
-            <button
-              type="button"
-              onClick={handleTestAndSaveApiUrl}
-              disabled={isTestingConnection}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#BCEE45] hover:bg-[#A3E635] text-[#111315] transition-all cursor-pointer shrink-0 disabled:opacity-60"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isTestingConnection ? 'animate-spin' : ''}`}
-              />
-              <span>{isTestingConnection ? 'Testando...' : 'Salvar e Testar'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Remember last settings */}
-        <label
-          className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
-            isDark
-              ? 'bg-[#161A18] border-[#2A302C]'
-              : 'bg-[#F9FAFB] border-[#E5E7EB]'
-          }`}
-        >
+      <section id="ajustes-privacidade" className="st-settings-card">
+        <h2>Privacidade</h2>
+        <SwitchRow
+          label="Guardar cópia do áudio no histórico"
+          description="Permite ouvir e baixar de novo sem reenviar o vídeo. Fica só neste navegador."
+          checked={settings.saveHistoryBlobs}
+          onChange={(saveHistoryBlobs) => update({ saveHistoryBlobs })}
+        />
+        <div className="st-danger-row">
           <div>
-            <div className="text-sm font-semibold">
-              Lembrar últimas opções utilizadas
-            </div>
-            <div
-              className={`text-xs ${
-                isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-              }`}
-            >
-              Mantém o último formato e taxa de bits escolhidos ao abrir um novo vídeo
-            </div>
+            <p className="text-strong text-sm font-semibold">
+              Dados locais ({historyCount} {historyCount === 1 ? 'item' : 'itens'})
+            </p>
+            <p className="text-muted mt-0.5 text-xs">
+              Apaga os registros e os áudios guardados neste navegador.
+            </p>
           </div>
-          <input
-            type="checkbox"
-            checked={settings.rememberLastConfig}
-            onChange={(e) =>
-              onUpdateSettings({
-                ...settings,
-                rememberLastConfig: e.target.checked,
-              })
-            }
-            className="w-4 h-4 accent-[#65A30D] rounded cursor-pointer"
-          />
-        </label>
-      </section>
-
-      {/* 3. Privacidade e Gerenciamento do Histórico */}
-      <section
-        className={`rounded-3xl border p-6 sm:p-7 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-          <span>Privacidade e Armazenamento Local</span>
-        </h2>
-
-        <div className="space-y-3">
-          <label
-            className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <div>
-              <div className="text-sm font-semibold">
-                Manter cópia do áudio no Histórico local (IndexedDB)
-              </div>
-              <div
-                className={`text-xs ${
-                  isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-                }`}
-              >
-                Permite ouvir e baixar novamente os áudios convertidos sem precisar reenviar o vídeo
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.saveHistoryBlobs}
-              onChange={(e) =>
-                onUpdateSettings({
-                  ...settings,
-                  saveHistoryBlobs: e.target.checked,
-                })
-              }
-              className="w-4 h-4 accent-[#65A30D] rounded cursor-pointer"
-            />
-          </label>
-
-          <div
-            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB]'
-            }`}
-          >
-            <div>
-              <div className="text-sm font-semibold">
-                Gerenciamento de dados armazenados ({historyCount}{' '}
-                {historyCount === 1 ? 'item' : 'itens'})
-              </div>
-              <div
-                className={`text-xs ${
-                  isDark ? 'text-[#A3AAA5]' : 'text-[#525866]'
-                }`}
-              >
-                Exclui imediatamente todos os registros e arquivos de áudio armazenados no navegador.
-              </div>
-            </div>
-
-            {clearedBanner ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#4D7C0F] dark:text-[#BCEE45]">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Histórico limpo com sucesso!</span>
-              </span>
-            ) : (
+          {confirmClear ? (
+            <div className="flex items-center gap-2">
+              <button type="button" className="st-danger" onClick={clearHistory}>
+                Confirmar exclusão
+              </button>
               <button
                 type="button"
-                disabled={historyCount === 0}
-                onClick={handleClear}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white transition-colors cursor-pointer shrink-0"
+                className="st-icon-btn"
+                onClick={() => setConfirmClear(false)}
+                aria-label="Cancelar"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Apagar todos os dados locais</span>
+                <X aria-hidden="true" />
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="st-chip"
+              disabled={historyCount === 0}
+              onClick={() => setConfirmClear(true)}
+            >
+              <Trash2 aria-hidden="true" />
+              Apagar dados
+            </button>
+          )}
         </div>
       </section>
 
-      {/* 4. Limites do Sistema, Ajuda e Solução de Problemas */}
-      <section
-        className={`rounded-3xl border p-6 sm:p-7 ${
-          isDark
-            ? 'bg-[#121513] border-[#1F2421] text-[#F3F4F6]'
-            : 'bg-white border-[#E5E7EB] text-[#111315] shadow-xs'
-        }`}
-      >
-        <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <HelpCircle className="w-4 h-4 text-[#4D7C0F] dark:text-[#BCEE45]" />
-          <span>Limites de Arquivos, Direitos de Uso e Ajuda</span>
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
-            }`}
-          >
-            <h3
-              className={`font-semibold text-sm mb-1.5 ${
-                isDark ? 'text-white' : 'text-[#111315]'
-              }`}
-            >
-              Limites Técnicos e Formatos
-            </h3>
-            <ul className="space-y-1 list-disc list-inside">
-              <li>
-                Tamanho máximo por arquivo: <strong>{MAX_FILE_SIZE_LABEL}</strong>.
-              </li>
-              <li>
-                Formatos de entrada: MP4, MOV, WEBM, MKV, AVI, M4V, OGV e 3GP.
-              </li>
-              <li>
-                Formatos de saída: MP3 (128 a 320 kbps), WAV (PCM 16-bit sem perdas), M4A e AAC.
-              </li>
-              <li>
-                Arquivos temporários gerados na conversão são removidos automaticamente no mesmo segundo em que o áudio fica pronto.
-              </li>
-            </ul>
-          </div>
-
-          <div
-            className={`p-4 rounded-2xl border ${
-              isDark
-                ? 'bg-[#161A18] border-[#2A302C] text-[#A3AAA5]'
-                : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#525866]'
-            }`}
-          >
-            <h3
-              className={`font-semibold text-sm mb-1.5 ${
-                isDark ? 'text-white' : 'text-[#111315]'
-              }`}
-            >
-              Solução de Problemas e Uso Responsável
-            </h3>
-            <ul className="space-y-1 list-disc list-inside">
-              <li>
-                <strong>Erro ao ler vídeo:</strong> Verifique se o vídeo possui trilha de áudio ativa e não está protegido por DRM.
-              </li>
-              <li>
-                <strong>Qualidade do som:</strong> A conversão preserva a fidelidade original do vídeo; taxas maiores como 320 kbps evitam perdas por compressão.
-              </li>
-              <li>
-                <strong>Direitos autorais:</strong> Utilize o SONORA apenas para vídeos próprios, gravações pessoais ou conteúdos que você tenha autorização para utilizar.
-              </li>
-            </ul>
-          </div>
-        </div>
+      <section id="ajustes-ajuda" className="st-settings-card">
+        <h2>Ajuda</h2>
+        <details className="st-help">
+          <summary>Limites e formatos</summary>
+          <ul>
+            <li>Tamanho máximo por arquivo: {MAX_FILE_SIZE_LABEL}.</li>
+            <li>Entrada: MP4, MOV, WEBM, MKV, AVI, M4V, OGV e 3GP.</li>
+            <li>Saída: MP3 de 128 a 320 kbps, WAV PCM 16-bit, M4A e AAC.</li>
+          </ul>
+        </details>
+        <details className="st-help">
+          <summary>O vídeo não abre</summary>
+          <p>Confira se ele tem uma faixa de áudio e se não está protegido por DRM.</p>
+        </details>
+        <details className="st-help">
+          <summary>Qualidade do som</summary>
+          <p>Taxas maiores evitam perdas na compressão, mas não superam a qualidade do vídeo original.</p>
+        </details>
+        <details className="st-help">
+          <summary>Direitos autorais</summary>
+          <p>Use o Sonora apenas com vídeos próprios ou conteúdos que você tem autorização para utilizar.</p>
+        </details>
       </section>
     </div>
   )

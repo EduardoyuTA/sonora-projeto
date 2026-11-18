@@ -136,7 +136,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
           qualityLabel={result.qualityLabel}
           duration={result.duration}
           peaks={result.peaks}
-          theme={theme}
           onPlayStateChange={onPlayStateChange}
         />
       </div>
@@ -167,7 +166,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>Editar configurações</span>
+            <span>Voltar ao editor</span>
           </button>
 
           {canNativeShare && (
