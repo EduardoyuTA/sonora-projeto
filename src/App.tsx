@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import type {
   ActiveTab,
   AppSettings,
@@ -53,7 +53,18 @@ import {
   toAuthUser,
 } from './services/authService'
 
+const LOGIN_PATH = '/entrar'
+
+const LandingPage = lazy(() =>
+  import('./components/LandingPage').then((module) => ({
+    default: module.LandingPage,
+  }))
+)
+
 export function App() {
+  const [showLanding, setShowLanding] = useState(
+    () => window.location.pathname !== LOGIN_PATH
+  )
   const [authUser, setAuthUser] = useState<AuthUser | null>(() =>
     loadAuthSession()
   )
@@ -234,6 +245,21 @@ export function App() {
       unsubscribe()
     }
   }, [])
+
+  // Botões voltar e avançar alternam entre a apresentação e o login
+  useEffect(() => {
+    const onPopState = () => {
+      setShowLanding(window.location.pathname !== LOGIN_PATH)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  const handleEnterStudio = () => {
+    window.history.pushState(null, '', LOGIN_PATH)
+    setShowLanding(false)
+    window.scrollTo(0, 0)
+  }
 
   // Pre-warm the Render FFmpeg API when running in hybrid-auto mode
   useEffect(() => {
@@ -555,19 +581,30 @@ export function App() {
     showToast('Histórico local limpo.')
   }
 
-  if (isCheckingAuth) {
-    return (
-      <div
-        role="status"
-        aria-label="Carregando SONORA"
-        className="min-h-screen flex items-center justify-center"
-      >
-        <span className="h-8 w-8 rounded-full border-2 border-[#BCEE45]/30 border-t-[#BCEE45] animate-spin" />
-      </div>
-    )
-  }
+  const loadingScreen = (
+    <div
+      role="status"
+      aria-label="Carregando SONORA"
+      className="min-h-screen flex items-center justify-center"
+    >
+      <span className="h-8 w-8 rounded-full border-2 border-[#BCEE45]/30 border-t-[#BCEE45] animate-spin" />
+    </div>
+  )
+
+  if (isCheckingAuth) return loadingScreen
 
   if (!authUser || isPasswordRecovery) {
+    if (showLanding && !isPasswordRecovery && !authRedirectError) {
+      return (
+        <Suspense fallback={loadingScreen}>
+          <LandingPage
+            onEnter={handleEnterStudio}
+            reducedMotion={settings.reducedMotion}
+          />
+        </Suspense>
+      )
+    }
+
     return (
       <LoginView
         onSuccessLogin={handleLoginSuccess}
@@ -582,6 +619,9 @@ export function App() {
   }
 
   const isConverting = conversionState === 'converting'
+  // Sucesso mantém o mesmo cartão do vídeo carregado, sem repetir a entrada
+  const uploadStage =
+    conversionState === 'success' ? 'loaded' : conversionState
 
   const mascotProps = {
     state: conversionState,
@@ -609,7 +649,7 @@ export function App() {
         <div
           role="status"
           aria-live="polite"
-          className="glass fixed top-4 left-1/2 z-50 -translate-x-1/2 px-4 py-3 rounded-2xl text-xs font-semibold text-strong flex items-center gap-2"
+          className="app-toast glass fixed top-4 left-1/2 z-50 -translate-x-1/2 px-4 py-3 rounded-2xl text-xs font-semibold text-strong flex items-center gap-2"
         >
           <span className="w-2 h-2 rounded-full bg-[#BCEE45]" />
           <span>{toastMessage}</span>
@@ -659,55 +699,61 @@ export function App() {
           )}
 
       {/* Main Content Container */}
-      <main className="flex-1 w-full max-w-xl lg:max-w-5xl">
+      <main key={activeTab} className="app-enter flex-1 w-full max-w-xl lg:max-w-5xl">
         {activeTab === 'converter' && (
           <div className="space-y-6">
             {/* Upload / Active Video Zone */}
-            <UploadZone
-              state={conversionState}
-              video={video}
-              errorMessage={errorMessage}
-              progressPercent={progressPercent}
-              progressStage={progressStage}
-              onSelectFile={handleSelectFile}
-              onLoadDemoVideo={handleLoadDemoVideo}
-              onRemoveVideo={handleRemoveVideo}
-              onCancelConversion={handleCancelConversion}
-              onRetry={() => {
-                if (video) {
-                  setErrorMessage(null)
-                  setConversionState('loaded')
-                } else {
-                  setConversionState('idle')
-                }
-              }}
-              theme={settings.theme}
-              onDragStateChange={setIsDraggingFile}
-            />
+            <div key={uploadStage} className="app-enter">
+              <UploadZone
+                state={conversionState}
+                video={video}
+                errorMessage={errorMessage}
+                progressPercent={progressPercent}
+                progressStage={progressStage}
+                onSelectFile={handleSelectFile}
+                onLoadDemoVideo={handleLoadDemoVideo}
+                onRemoveVideo={handleRemoveVideo}
+                onCancelConversion={handleCancelConversion}
+                onRetry={() => {
+                  if (video) {
+                    setErrorMessage(null)
+                    setConversionState('loaded')
+                  } else {
+                    setConversionState('idle')
+                  }
+                }}
+                theme={settings.theme}
+                onDragStateChange={setIsDraggingFile}
+              />
+            </div>
 
             {/* Settings Panel when video is loaded */}
             {conversionState === 'loaded' && video && (
-              <ConversionSettingsPanel
-                video={video}
-                config={config}
-                onChangeConfig={setConfig}
-                onStartConversion={handleStartConversion}
-                processingMode={settings.processingMode}
-                isConverting={false}
-                theme={settings.theme}
-              />
+              <div className="app-enter app-enter--late">
+                <ConversionSettingsPanel
+                  video={video}
+                  config={config}
+                  onChangeConfig={setConfig}
+                  onStartConversion={handleStartConversion}
+                  processingMode={settings.processingMode}
+                  isConverting={false}
+                  theme={settings.theme}
+                />
+              </div>
             )}
 
             {/* Result Card when conversion succeeds */}
             {conversionState === 'success' && result && (
-              <ResultCard
-                result={result}
-                onDownload={handleDownloadResult}
-                onConvertAnother={handleRemoveVideo}
-                onEditSettings={() => setConversionState('loaded')}
-                theme={settings.theme}
-                onPlayStateChange={setIsAudioPlaying}
-              />
+              <div className="app-result">
+                <ResultCard
+                  result={result}
+                  onDownload={handleDownloadResult}
+                  onConvertAnother={handleRemoveVideo}
+                  onEditSettings={() => setConversionState('loaded')}
+                  theme={settings.theme}
+                  onPlayStateChange={setIsAudioPlaying}
+                />
+              </div>
             )}
 
           </div>

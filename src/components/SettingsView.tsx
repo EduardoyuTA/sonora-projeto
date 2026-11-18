@@ -93,7 +93,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="app-stagger space-y-6">
       {/* Header */}
       <div
         className={`rounded-3xl border p-6 sm:p-8 ${

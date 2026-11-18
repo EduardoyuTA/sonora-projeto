@@ -201,7 +201,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="app-stagger space-y-3">
           {items.map((item) => {
             const isPreviewOpen = playingItemId === item.id && Boolean(playingUrl)
             const isConfirmingDelete = itemToDelete === item.id

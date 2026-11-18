@@ -5,7 +5,6 @@ import {
   Music,
   Plus,
   Scissors,
-  AudioWaveform,
   CheckCircle2,
   FolderOpen,
   Loader2,
@@ -226,7 +225,12 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-12 h-12 rounded-2xl shrink-0 flex items-center justify-center bg-[#BCEE45] text-[#111315]">
-              <AudioWaveform className="w-6 h-6 animate-pulse" />
+              <span className="eq-bars" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -258,7 +262,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           aria-valuemax={100}
         >
           <div
-            className="h-full bg-[#A3E635] transition-all duration-200 rounded-full"
+            className="progress-fill h-full bg-[#A3E635] transition-all duration-200 rounded-full"
             style={{ width: `${Math.max(4, Math.min(100, progressPercent))}%` }}
           />
         </div>
@@ -456,7 +460,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           onMouseLeave={() => setIsHovered(false)}
           className={`dropzone-dashed flex flex-col items-center gap-5 rounded-3xl px-5 py-10 sm:px-8 sm:py-14 text-center transition-colors duration-200 ${
             isDragging
-              ? 'border-[var(--accent-text)]! bg-[var(--accent-soft)]!'
+              ? 'is-dragging border-[var(--accent-text)]! bg-[var(--accent-soft)]!'
               : isHovered
                 ? 'bg-[var(--surface-2)]!'
                 : ''
@@ -498,7 +502,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
           </div>
         </div>
 
-        <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <ul className="app-stagger grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <FeatureItem
             icon={<Music className="h-5 w-5" strokeWidth={2} />}
             title="4 formatos de áudio"

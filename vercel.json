@@ -5,6 +5,15 @@
   "outputDirectory": "dist",
   "headers": [
     {
+      "source": "/cinema/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
@@ -16,7 +25,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|samples/|favicon\\.svg|icons\\.svg|icon-192\\.png).*)",
+      "source": "/((?!api/|assets/|samples/|cinema/|favicon\\.svg|icons\\.svg|icon-192\\.png).*)",
       "destination": "/index.html"
     }
   ]
