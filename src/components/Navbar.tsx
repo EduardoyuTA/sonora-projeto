@@ -3,6 +3,7 @@ import {
   AudioWaveform,
   Check,
   History,
+  House,
   LogOut,
   Moon,
   Music,
@@ -73,6 +74,7 @@ interface ThemeLogoutProps {
   onToggleTheme: () => void
   user?: AuthUser | null
   onLogout?: () => void
+  onGoHome: () => void
 }
 
 const ThemeAndLogout: React.FC<ThemeLogoutProps> = ({
@@ -80,10 +82,21 @@ const ThemeAndLogout: React.FC<ThemeLogoutProps> = ({
   onToggleTheme,
   user,
   onLogout,
+  onGoHome,
 }) => {
   const isDark = theme === 'dark'
   return (
     <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onGoHome}
+        className={`btn-glass h-11 min-w-11 rounded-xl flex items-center justify-center gap-2 px-3 text-sm font-medium cursor-pointer ${focusRing}`}
+        aria-label="Voltar para a tela inicial"
+        title="Tela inicial"
+      >
+        <House className="text-muted h-[18px] w-[18px]" aria-hidden="true" />
+        <span className="hidden sm:inline">Início</span>
+      </button>
       <button
         type="button"
         onClick={onToggleTheme}

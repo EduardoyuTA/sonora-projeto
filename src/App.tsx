@@ -76,6 +76,8 @@ export function App() {
   const [showLanding, setShowLanding] = useState(
     () => window.location.pathname !== LOGIN_PATH
   )
+  // Quem clica em Início vê a apresentação mesmo com uma conta ativa
+  const [isHomeRequested, setIsHomeRequested] = useState(false)
   const [authUser, setAuthUser] = useState<AuthUser | null>(() =>
     loadAuthSession()
   )
@@ -279,6 +281,15 @@ export function App() {
     window.history.pushState(null, '', LOGIN_PATH)
     runViewTransition(() => {
       setShowLanding(false)
+      window.scrollTo(0, 0)
+    }, settings.reducedMotion)
+  }
+
+  const handleGoHome = () => {
+    window.history.pushState(null, '', '/')
+    setIsHomeRequested(true)
+    runViewTransition(() => {
+      setShowLanding(true)
       window.scrollTo(0, 0)
     }, settings.reducedMotion)
   }
@@ -619,18 +630,24 @@ export function App() {
 
   if (isCheckingAuth) return loadingScreen
 
-  if (!authUser || isPasswordRecovery) {
-    if (showLanding && !isPasswordRecovery && !authRedirectError) {
-      return (
-        <Suspense fallback={loadingScreen}>
-          <LandingPage
-            onEnter={handleEnterStudio}
-            reducedMotion={settings.reducedMotion}
-          />
-        </Suspense>
-      )
-    }
+  const canShowLanding =
+    showLanding &&
+    !isPasswordRecovery &&
+    !authRedirectError &&
+    (isHomeRequested || !authUser || authUser.provider === 'guest')
 
+  if (canShowLanding) {
+    return (
+      <Suspense fallback={loadingScreen}>
+        <LandingPage
+          onEnter={handleEnterStudio}
+          reducedMotion={settings.reducedMotion}
+        />
+      </Suspense>
+    )
+  }
+
+  if (!authUser || isPasswordRecovery) {
     if (isAuthConfigured || isPasswordRecovery) {
       return (
         <LoginView
@@ -714,6 +731,7 @@ export function App() {
             onToggleTheme={handleToggleTheme}
             user={studioUser}
             onLogout={studioLogout}
+            onGoHome={handleGoHome}
           />
           <DesktopTopBar
             activeTab={activeTab}
@@ -722,6 +740,7 @@ export function App() {
             onToggleTheme={handleToggleTheme}
             user={studioUser}
             onLogout={studioLogout}
+            onGoHome={handleGoHome}
           />
           {activeTab === 'converter' && (
             <div className="lg:hidden pb-5">
