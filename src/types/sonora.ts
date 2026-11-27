@@ -23,7 +23,13 @@ export interface VideoMetadata {
   height: number
   objectUrl: string
   isDemo?: boolean
+  /** Veio do download por link */
+  fromLink?: boolean
+  /** O vídeo já começa com as batidas de contagem */
+  withIntroBeats?: boolean
 }
+
+export type VideoOrigin = Pick<VideoMetadata, 'fromLink' | 'withIntroBeats'>
 
 export interface ConversionConfig {
   format: AudioFormat

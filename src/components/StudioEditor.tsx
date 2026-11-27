@@ -676,7 +676,11 @@ export const StudioEditor: React.FC<StudioEditorProps> = ({
             <div className="st-beats">
               <SwitchRow
                 label="Batidas no início"
-                description={`4 batidas, ${INTRO_BEATS_SECONDS.toLocaleString('pt-BR')} s antes do áudio.`}
+                description={
+                  video.withIntroBeats
+                    ? 'Este vídeo já começa com as batidas.'
+                    : `4 batidas, ${INTRO_BEATS_SECONDS.toLocaleString('pt-BR')} s antes do áudio.`
+                }
                 checked={config.introBeats}
                 onChange={(introBeats) => updateConfig({ introBeats })}
               />
