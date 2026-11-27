@@ -6,6 +6,7 @@ import {
   handleConvertRequest,
   handleHealthRequest,
 } from './server/ffmpegHandler.mjs'
+import { handleLinkDownloadRequest } from './server/linkDownloadHandler.mjs'
 
 function sonoraFfmpegPlugin(): Plugin {
   return {
@@ -17,6 +18,10 @@ function sonoraFfmpegPlugin(): Plugin {
 
       server.middlewares.use('/api/convert', (req, res) => {
         handleConvertRequest(req, res)
+      })
+
+      server.middlewares.use('/api/download-link', (req, res) => {
+        handleLinkDownloadRequest(req, res)
       })
     },
   }

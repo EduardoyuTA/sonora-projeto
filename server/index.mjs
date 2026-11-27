@@ -4,6 +4,7 @@ import {
   handleConvertRequest,
   handleHealthRequest,
 } from './ffmpegHandler.mjs'
+import { handleLinkDownloadRequest } from './linkDownloadHandler.mjs'
 
 const PORT = Number(process.env.PORT || 3001)
 const ALLOWED_ORIGIN =
@@ -41,6 +42,11 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/convert') {
     handleConvertRequest(req, res)
+    return
+  }
+
+  if (url.pathname === '/api/download-link') {
+    handleLinkDownloadRequest(req, res)
     return
   }
 

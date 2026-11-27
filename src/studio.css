@@ -1445,6 +1445,121 @@ input[type='range'].st-range:disabled {
   }
 }
 
+/* Download por link */
+.st-link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 16px;
+}
+
+.st-link__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.st-link__title svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-text);
+}
+
+.st-link__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.st-link__field {
+  display: flex;
+  min-width: 220px;
+  min-height: 48px;
+  flex: 1;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 0 14px;
+  transition: border-color 0.3s ease;
+}
+
+.st-link__field:focus-within {
+  border-color: var(--accent-text);
+}
+
+.st-link__field input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  color: var(--text-strong);
+  font-size: 14px;
+  outline: none;
+}
+
+.st-link__button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.st-link__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.st-link__button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.st-link__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.st-link__status svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--accent-text);
+}
+
+.st-link__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-2);
+  padding: 10px 12px;
+  animation: app-fade 0.5s ease backwards;
+}
+
+@media (max-width: 640px) {
+  .st-link__button {
+    width: 100%;
+  }
+}
+
+.motion-reduce .st-link__error,
 .motion-reduce .st-drop-overlay {
   animation: none;
 }

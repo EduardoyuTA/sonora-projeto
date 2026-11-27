@@ -7,14 +7,14 @@ import { fileURLToPath } from 'node:url'
 
 // Batidas que podem ser colocadas antes do áudio extraído (contagem de 2,4 s).
 // Uma cópia igual fica em public/audio/ para a conversão no navegador.
-const INTRO_BEATS_PATH = fileURLToPath(
+export const INTRO_BEATS_PATH = fileURLToPath(
   new URL('./assets/batida-inicial.mp3', import.meta.url)
 )
 // Formato comum para as duas partes antes de juntar
-const CONCAT_FORMAT = 'aformat=sample_rates=44100:channel_layouts=stereo'
+export const CONCAT_FORMAT = 'aformat=sample_rates=44100:channel_layouts=stereo'
 
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024 // 500 MB
-function readPositiveInteger(value, fallback, maximum) {
+export function readPositiveInteger(value, fallback, maximum) {
   const parsed = Number.parseInt(String(value || ''), 10)
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback
   return Math.min(parsed, maximum)
@@ -25,12 +25,12 @@ const MAX_CONCURRENT_JOBS = readPositiveInteger(
   4,
   32
 )
-const FFMPEG_TIMEOUT_MS = readPositiveInteger(
+export const FFMPEG_TIMEOUT_MS = readPositiveInteger(
   process.env.FFMPEG_TIMEOUT_MS,
   180_000,
   15 * 60_000
 )
-const UPLOAD_TIMEOUT_MS = readPositiveInteger(
+export const UPLOAD_TIMEOUT_MS = readPositiveInteger(
   process.env.UPLOAD_TIMEOUT_MS,
   5 * 60_000,
   30 * 60_000
@@ -47,7 +47,7 @@ const MAX_REQUESTS_PER_WINDOW = readPositiveInteger(
 )
 const MAX_STDERR_CHARS = 8192
 
-const tempDir = path.join(os.tmpdir(), 'sonora-conversions')
+export const tempDir = path.join(os.tmpdir(), 'sonora-conversions')
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true })
 }
@@ -116,12 +116,12 @@ export function applyCorsHeaders(req, res, allowedOrigin = '*') {
   )
   res.setHeader(
     'Access-Control-Expose-Headers',
-    'X-Sonora-Engine, Content-Length, Content-Type, X-Request-Id'
+    'X-Sonora-Engine, Content-Length, Content-Type, X-Request-Id, X-Sonora-Filename, X-Sonora-Intro'
   )
   return true
 }
 
-function sendJson(res, statusCode, payload) {
+export function sendJson(res, statusCode, payload) {
   if (res.headersSent || res.writableEnded) return
   res.statusCode = statusCode
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -142,6 +142,17 @@ export function handleHealthRequest(_req, res) {
 let activeJobs = 0
 const requestWindows = new Map()
 
+// Vaga compartilhada entre conversões e downloads por link
+export function tryReserveJob() {
+  if (activeJobs >= MAX_CONCURRENT_JOBS) return false
+  activeJobs++
+  return true
+}
+
+export function releaseJobSlot() {
+  activeJobs = Math.max(0, activeJobs - 1)
+}
+
 function getClientIp(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '')
     .split(',')[0]
@@ -149,7 +160,7 @@ function getClientIp(req) {
   return forwarded || req.socket.remoteAddress || 'unknown'
 }
 
-function consumeRequestQuota(req) {
+export function consumeRequestQuota(req) {
   const now = Date.now()
   if (requestWindows.size > 10_000) {
     for (const [storedKey, window] of requestWindows) {
@@ -174,7 +185,7 @@ function consumeRequestQuota(req) {
   return { allowed: true, retryAfterSeconds: 0 }
 }
 
-function logJob(event, requestId, details = {}) {
+export function logJob(event, requestId, details = {}) {
   console.info(
     JSON.stringify({
       service: 'sonora-ffmpeg-api',

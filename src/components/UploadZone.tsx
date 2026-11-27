@@ -12,10 +12,17 @@ import {
   Play,
   RefreshCw,
   Trash2,
+  Download,
   Upload,
   X,
 } from 'lucide-react'
-import type { ConversionState, VideoMetadata } from '../types/sonora'
+import type {
+  ConversionState,
+  ProcessingMode,
+  VideoMetadata,
+  VideoOrigin,
+} from '../types/sonora'
+import { LinkImport } from './LinkImport'
 import {
   ACCEPTED_VIDEO_EXTENSIONS,
   MAX_FILE_SIZE_LABEL,
@@ -29,7 +36,8 @@ interface UploadZoneProps {
   errorMessage: string | null
   progressPercent: number
   progressStage: string
-  onSelectFile: (file: File, isDemo?: boolean) => void
+  onSelectFile: (file: File, isDemo?: boolean, origin?: VideoOrigin) => void
+  processingMode: ProcessingMode
   onLoadDemoVideo: () => void
   onRemoveVideo: () => void
   onCancelConversion: () => void
@@ -45,6 +53,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
   progressPercent,
   progressStage,
   onSelectFile,
+  processingMode,
   onLoadDemoVideo,
   onRemoveVideo,
   onCancelConversion,
@@ -431,6 +440,20 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
           {/* Actions: Change or Remove Video */}
           <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            {video.fromLink && (
+              <a
+                href={video.objectUrl}
+                download={`${video.baseName}.mp4`}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A3E635] ${
+                  isDark
+                    ? 'bg-[#161A18] border-[#2A302C] text-[#F3F4F6] hover:bg-[#1F2421]'
+                    : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111315] hover:bg-[#F1F3F5]'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Salvar vídeo</span>
+              </a>
+            )}
             <button
               type="button"
               onClick={triggerFileBrowser}
@@ -566,6 +589,11 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
             </button>
           </div>
         </div>
+
+        <LinkImport
+          processingMode={processingMode}
+          onImported={(file, origin) => onSelectFile(file, false, origin)}
+        />
 
         <ul className="app-stagger grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <FeatureItem

@@ -9,6 +9,7 @@ import type {
   HistoryItem,
   MascotMood,
   VideoMetadata,
+  VideoOrigin,
 } from './types/sonora'
 import {
   clearAllAudioBlobs,
@@ -363,7 +364,11 @@ export function App() {
     })
   }
 
-  const handleSelectFile = async (file: File, isDemo = false) => {
+  const handleSelectFile = async (
+    file: File,
+    isDemo = false,
+    origin: VideoOrigin = {}
+  ) => {
     if (conversionState === 'converting') return
 
     // Clean up previous URLs
@@ -379,7 +384,10 @@ export function App() {
     changeStage('validating')
 
     try {
-      const metadata = await validateAndProbeVideo(file, isDemo)
+      const metadata = {
+        ...(await validateAndProbeVideo(file, isDemo)),
+        ...origin,
+      }
       setVideo(metadata)
 
       const lastPrefs = settings.rememberLastConfig
@@ -402,11 +410,22 @@ export function App() {
         volume: 100,
         normalize: false,
         preserveOriginal: false,
-        // A escolha das batidas continua valendo para o próximo vídeo
-        introBeats: prev.introBeats,
+        // A escolha das batidas continua valendo para o próximo vídeo,
+        // exceto quando ele já chegou com as batidas
+        introBeats: origin.withIntroBeats ? false : prev.introBeats,
       }))
 
       changeStage('loaded')
+      if (origin.fromLink) {
+        triggerMascotReaction({
+          mood: 'success',
+          eyebrow: 'Vídeo baixado',
+          title: origin.withIntroBeats
+            ? 'Chegou com as batidas no início!'
+            : 'O vídeo chegou no estúdio!',
+          description: 'Corte, ajuste o som e converta. Dá para salvar o vídeo também.',
+        })
+      }
     } catch (err) {
       setVideo(null)
       setErrorMessage(
@@ -761,6 +780,7 @@ export function App() {
                 progressPercent={progressPercent}
                 progressStage={progressStage}
                 onSelectFile={handleSelectFile}
+                processingMode={settings.processingMode}
                 onLoadDemoVideo={handleLoadDemoVideo}
                 onRemoveVideo={handleRemoveVideo}
                 onCancelConversion={handleCancelConversion}
