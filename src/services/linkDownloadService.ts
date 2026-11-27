@@ -17,6 +17,7 @@ export type LinkErrorCode =
   | 'busy'
   | 'timeout'
   | 'offline'
+  | 'youtube'
   | 'failed'
 
 export class LinkDownloadError extends Error {
@@ -52,8 +53,21 @@ const KNOWN_CODES: LinkErrorCode[] = [
   'busy',
   'timeout',
   'offline',
+  'youtube',
   'failed',
 ]
+
+const YOUTUBE_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
+
+// O YouTube bloqueia downloads feitos pelo servidor, então o app avisa antes
+export const isYouTubeLink = (value: string) => {
+  try {
+    const host = new URL(value.trim()).hostname.toLowerCase()
+    return YOUTUBE_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`))
+  } catch {
+    return false
+  }
+}
 
 export const isValidLink = (value: string) => {
   try {
@@ -87,6 +101,7 @@ export async function downloadVideoFromLink(
   onProgress: (progress: LinkDownloadProgress) => void
 ): Promise<LinkDownloadResult> {
   if (!isValidLink(link)) throw new LinkDownloadError('invalid_url')
+  if (isYouTubeLink(link)) throw new LinkDownloadError('youtube')
 
   const baseUrl = resolveApiBaseUrl()
   onProgress({ stage: 'connecting', percent: null })
