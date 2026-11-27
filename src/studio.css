@@ -1527,6 +1527,12 @@ input[type='range'].st-range:disabled {
   height: 17px;
 }
 
+.st-link__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .st-link__status {
   display: flex;
   align-items: center;
