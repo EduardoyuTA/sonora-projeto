@@ -8,6 +8,7 @@ import {
   CONCAT_FORMAT,
   FFMPEG_TIMEOUT_MS,
   INTRO_BEATS_PATH,
+  INTRO_MATCH_LOUDNESS,
   MAX_UPLOAD_BYTES,
   consumeRequestQuota,
   logJob,
@@ -254,7 +255,7 @@ function buildFinishArgs(sourcePath, outputPath, streams, withIntroBeats) {
     const introAudio =
       `[1:a:0]atrim=0:${INTRO_SECONDS},asetpts=PTS-STARTPTS,` +
       `apad=whole_dur=${INTRO_SECONDS},${CONCAT_FORMAT}[intro]`
-    const mainAudio = `[0:a:0]${CONCAT_FORMAT}[main]`
+    const mainAudio = `[0:a:0]${INTRO_MATCH_LOUDNESS},${CONCAT_FORMAT}[main]`
     const joined = '[intro][main]concat=n=2:v=0:a=1[a]'
     const filters = [introAudio, mainAudio, joined]
     const maps = ['-map', '[a]']
