@@ -69,8 +69,8 @@ const FRIENDLY_ERRORS: Record<LinkErrorCode, { title: string; message: string }>
     message: 'Tente de novo ou escolha um vídeo mais curto.',
   },
   youtube: {
-    title: 'Links do YouTube ainda não funcionam',
-    message: 'O YouTube não permite baixar por aqui. Se você tiver o arquivo do vídeo, é só soltar ele no estúdio.',
+    title: 'O YouTube bloqueou este vídeo',
+    message: 'Alguns vídeos do YouTube não podem ser baixados por aqui. Tente outro link ou solte o arquivo do vídeo no estúdio.',
   },
   offline: {
     title: 'Não alcançamos o servidor',
@@ -108,10 +108,6 @@ export const LinkImport: React.FC<LinkImportProps> = ({
     if (isLoading || disabled) return
     if (!isValidLink(link)) {
       setStatus({ kind: 'error', code: 'invalid_url' })
-      return
-    }
-    if (isYouTubeLink(link)) {
-      setStatus({ kind: 'error', code: 'youtube' })
       return
     }
 
@@ -157,12 +153,13 @@ export const LinkImport: React.FC<LinkImportProps> = ({
     )
   }
 
-  // O aviso do YouTube aparece assim que o link é colado
-  const errorCode: LinkErrorCode | null = isYouTube
-    ? 'youtube'
-    : status.kind === 'error'
-      ? status.code
-      : null
+  // Quando o YouTube recusa, a mensagem fala dele diretamente
+  const errorCode: LinkErrorCode | null =
+    status.kind !== 'error'
+      ? null
+      : status.code === 'blocked' && isYouTube
+        ? 'youtube'
+        : status.code
   const friendlyError = errorCode ? FRIENDLY_ERRORS[errorCode] : null
 
   return (
@@ -207,13 +204,19 @@ export const LinkImport: React.FC<LinkImportProps> = ({
           <button
             type="submit"
             className="btn-lime st-link__button"
-            disabled={disabled || !link.trim() || isYouTube}
+            disabled={disabled || !link.trim()}
           >
             <Download aria-hidden="true" />
             Baixar vídeo
           </button>
         )}
       </form>
+
+      {isYouTube && status.kind === 'idle' && (
+        <p className="st-link__hint">
+          O YouTube bloqueia alguns vídeos. Se isso acontecer, a gente avisa.
+        </p>
+      )}
 
       <SwitchRow
         label="Colocar batidas no início"
@@ -242,7 +245,7 @@ export const LinkImport: React.FC<LinkImportProps> = ({
             <p className="text-strong text-sm font-semibold">{friendlyError.title}</p>
             <p className="text-muted mt-0.5 text-sm">{friendlyError.message}</p>
           </div>
-          {errorCode && !['invalid_url', 'youtube'].includes(errorCode) && (
+          {errorCode && errorCode !== 'invalid_url' && (
             <button
               type="button"
               className="st-icon-btn"

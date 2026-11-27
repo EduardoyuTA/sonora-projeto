@@ -59,7 +59,7 @@ const KNOWN_CODES: LinkErrorCode[] = [
 
 const YOUTUBE_HOSTS = ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
 
-// O YouTube bloqueia downloads feitos pelo servidor, então o app avisa antes
+// O YouTube bloqueia parte dos downloads feitos pelo servidor
 export const isYouTubeLink = (value: string) => {
   try {
     const host = new URL(value.trim()).hostname.toLowerCase()
@@ -101,7 +101,6 @@ export async function downloadVideoFromLink(
   onProgress: (progress: LinkDownloadProgress) => void
 ): Promise<LinkDownloadResult> {
   if (!isValidLink(link)) throw new LinkDownloadError('invalid_url')
-  if (isYouTubeLink(link)) throw new LinkDownloadError('youtube')
 
   const baseUrl = resolveApiBaseUrl()
   onProgress({ stage: 'connecting', percent: null })
