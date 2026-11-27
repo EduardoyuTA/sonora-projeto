@@ -12,6 +12,8 @@ export const INTRO_BEATS_PATH = fileURLToPath(
 )
 // Formato comum para as duas partes antes de juntar
 export const CONCAT_FORMAT = 'aformat=sample_rates=44100:channel_layouts=stereo'
+// Com as batidas, o som do vídeo é nivelado neste volume para não ficar abaixo delas
+export const INTRO_MATCH_LOUDNESS = 'loudnorm=I=-14:TP=-1.5:LRA=11'
 
 export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024 // 500 MB
 export function readPositiveInteger(value, fallback, maximum) {
@@ -392,6 +394,12 @@ export function handleConvertRequest(req, res) {
 
     const filters = []
     if (!preserveOriginal) {
+      // O nivelamento vem antes do volume para o ajuste manual continuar valendo
+      if (normalize) {
+        filters.push('loudnorm=I=-16:TP=-1.5:LRA=11')
+      } else if (withIntroBeats) {
+        filters.push(INTRO_MATCH_LOUDNESS)
+      }
       if (
         !Number.isNaN(volume) &&
         volume !== 100 &&
@@ -400,9 +408,6 @@ export function handleConvertRequest(req, res) {
       ) {
         const volFactor = (volume / 100).toFixed(2)
         filters.push(`volume=${volFactor}`)
-      }
-      if (normalize) {
-        filters.push('loudnorm=I=-16:TP=-1.5:LRA=11')
       }
     }
 

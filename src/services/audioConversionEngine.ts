@@ -304,6 +304,21 @@ async function encodeMp3FromAudioBuffer(
   return new Blob(mp3Chunks as BlobPart[], { type: 'audio/mpeg' })
 }
 
+// Com as batidas, o som do vídeo sobe até este nível (cerca de -16 dBFS RMS)
+const INTRO_MATCH_RMS = 0.158
+const MAX_LEVEL_GAIN = 10
+const LIMITER_THRESHOLD = 0.9
+
+// Segura os picos sem cortar o som de forma brusca
+const softLimit = (sample: number) => {
+  const magnitude = Math.abs(sample)
+  if (magnitude <= LIMITER_THRESHOLD) return sample
+  const headroom = 1 - LIMITER_THRESHOLD
+  const limited =
+    LIMITER_THRESHOLD + headroom * Math.tanh((magnitude - LIMITER_THRESHOLD) / headroom)
+  return Math.sign(sample) * limited
+}
+
 /**
  * Applies trim, volume gain, and peak normalization to an AudioBuffer.
  */
@@ -346,14 +361,30 @@ function processAudioBuffer(
   const normFactor =
     !config.preserveOriginal && config.normalize ? 0.94 / peakAmplitude : 1.0
   const volumeFactor = !config.preserveOriginal ? config.volume / 100 : 1.0
-  const totalGain = normFactor * volumeFactor
+
+  // Vídeos baixos ficariam abafados depois das batidas, então sobem de nível
+  const shouldLevel =
+    config.introBeats && !config.preserveOriginal && !config.normalize
+  let levelFactor = 1
+  if (shouldLevel) {
+    let sumOfSquares = 0
+    for (let c = 0; c < numChannels; c++) {
+      const src = sourceBuffer.getChannelData(c)
+      for (let i = startSample; i < endSample; i++) {
+        sumOfSquares += src[i] * src[i]
+      }
+    }
+    const rms = Math.sqrt(sumOfSquares / Math.max(1, frameCount * numChannels))
+    levelFactor = Math.min(MAX_LEVEL_GAIN, Math.max(1, INTRO_MATCH_RMS / Math.max(rms, 1e-6)))
+  }
+  const totalGain = normFactor * volumeFactor * levelFactor
 
   for (let c = 0; c < numChannels; c++) {
     const src = sourceBuffer.getChannelData(c)
     const dst = targetBuffer.getChannelData(c)
     for (let i = 0; i < frameCount; i++) {
       const sample = src[startSample + i] * totalGain
-      dst[i] = Math.max(-1, Math.min(1, sample))
+      dst[i] = shouldLevel ? softLimit(sample) : Math.max(-1, Math.min(1, sample))
     }
   }
 
