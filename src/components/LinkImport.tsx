@@ -5,6 +5,7 @@ import {
   LinkDownloadError,
   downloadVideoFromLink,
   isValidLink,
+  isYouTubeLink,
   type LinkDownloadProgress,
   type LinkErrorCode,
 } from '../services/linkDownloadService'
@@ -67,6 +68,10 @@ const FRIENDLY_ERRORS: Record<LinkErrorCode, { title: string; message: string }>
     title: 'O download demorou demais',
     message: 'Tente de novo ou escolha um vídeo mais curto.',
   },
+  youtube: {
+    title: 'Links do YouTube ainda não funcionam',
+    message: 'O YouTube não permite baixar por aqui. Se você tiver o arquivo do vídeo, é só soltar ele no estúdio.',
+  },
   offline: {
     title: 'Não alcançamos o servidor',
     message: 'Ele pode estar acordando. Tente de novo em alguns segundos.',
@@ -96,12 +101,17 @@ export const LinkImport: React.FC<LinkImportProps> = ({
   useEffect(() => () => controllerRef.current?.abort(), [])
 
   const isLoading = status.kind === 'loading'
+  const isYouTube = isYouTubeLink(link)
   const needsServer = processingMode === 'browser-only'
 
   const startDownload = async () => {
     if (isLoading || disabled) return
     if (!isValidLink(link)) {
       setStatus({ kind: 'error', code: 'invalid_url' })
+      return
+    }
+    if (isYouTubeLink(link)) {
+      setStatus({ kind: 'error', code: 'youtube' })
       return
     }
 
@@ -147,7 +157,13 @@ export const LinkImport: React.FC<LinkImportProps> = ({
     )
   }
 
-  const friendlyError = status.kind === 'error' ? FRIENDLY_ERRORS[status.code] : null
+  // O aviso do YouTube aparece assim que o link é colado
+  const errorCode: LinkErrorCode | null = isYouTube
+    ? 'youtube'
+    : status.kind === 'error'
+      ? status.code
+      : null
+  const friendlyError = errorCode ? FRIENDLY_ERRORS[errorCode] : null
 
   return (
     <div className="st-link">
@@ -191,7 +207,7 @@ export const LinkImport: React.FC<LinkImportProps> = ({
           <button
             type="submit"
             className="btn-lime st-link__button"
-            disabled={disabled || !link.trim()}
+            disabled={disabled || !link.trim() || isYouTube}
           >
             <Download aria-hidden="true" />
             Baixar vídeo
@@ -226,7 +242,7 @@ export const LinkImport: React.FC<LinkImportProps> = ({
             <p className="text-strong text-sm font-semibold">{friendlyError.title}</p>
             <p className="text-muted mt-0.5 text-sm">{friendlyError.message}</p>
           </div>
-          {status.kind === 'error' && status.code !== 'invalid_url' && (
+          {errorCode && !['invalid_url', 'youtube'].includes(errorCode) && (
             <button
               type="button"
               className="st-icon-btn"
