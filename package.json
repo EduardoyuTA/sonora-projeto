@@ -12,20 +12,20 @@
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
-    "@supabase/supabase-js": "^2.118.0",
-    "@tailwindcss/vite": "^4.3.3",
-    "lucide-react": "^1.62.0",
+    "@supabase/supabase-js": "^2.119.2",
+    "@tailwindcss/vite": "^4.3.5",
+    "lucide-react": "^1.82.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@types/node": "^24.19.2",
-    "@types/react": "^19.3.0",
+    "@types/node": "^24.19.4",
+    "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "oxlint": "^1.89.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "oxlint": "^1.95.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.4.0"
   }
 }
